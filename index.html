@@ -1,7 +1,7 @@
 
-   const SB_URL = "https://efutoaoejjnwqujkyjzf.supabase.co/rest/v1/";
-   const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmdXRvYW9lampud3F1amt5anpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODE2NDYsImV4cCI6MjA5NzI1NzY0Nn0.8JG0huoiI4Fqq8JSjLycaXKUxFhpLXRHAmVFNekVQVo";
 
+const SB_URL = "https://efutoaoejjnwqujkyjzf.supabase.co/rest/v1/";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmdXRvYW9lampud3F1amt5anpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODE2NDYsImV4cCI6MjA5NzI1NzY0Nn0.8JG0huoiI4Fqq8JSjLycaXKUxFhpLXRHAmVFNekVQVo";
 
 <!DOCTYPE html>
 <html lang="en">
@@ -10,22 +10,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>KATL Cricket</title>
 <meta name="theme-color" content="#080808">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏏</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127951;</text></svg>">
 <script src="https://cdn.tailwindcss.com"></script>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
 <style>
-  html, body { background:#080808; margin:0; }
+  html, body { background:#080808; margin:0; color:#f0ede8; font-family: system-ui, sans-serif; }
   input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  #errbox { display:none; padding:20px; white-space:pre-wrap; font-family:monospace; font-size:13px; color:#ffb98a; }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo } = React;
+<div id="errbox"></div>
 
+<script>
+  // Visible error catcher so the page never silently shows a black screen.
+  function showErr(msg) {
+    var b = document.getElementById('errbox');
+    if (b) { b.style.display = 'block'; b.textContent = "KATL app error:\n\n" + msg + "\n\n(Screenshot this and send it.)"; }
+  }
+  window.addEventListener('error', function (e) {
+    showErr((e.error && e.error.stack) ? e.error.stack : e.message);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    showErr('Promise error: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+  // If React libs failed to load (CDN blocked), say so clearly.
+  window.addEventListener('load', function () {
+    if (!window.React || !window.ReactDOM) {
+      showErr('Could not load React from the CDN (unpkg.com). Check the internet connection, or the host may be blocking unpkg.');
+    }
+  });
+</script>
 
+<script>
+//<![CDATA[
+const {
+  useState,
+  useEffect,
+  useMemo
+} = React;
 
 /* ================= KATL Weekend Cricket — Phoenix Edition =================
    Shared-data team app: availability, attendance, leaves.
@@ -34,7 +59,6 @@ const { useState, useEffect, useMemo } = React;
 ============================================================================ */
 
 const KATL_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAC1CAMAAACK5/ZIAAACf1BMVEXlnFuiXSJYoBXbqJZgXx2daFWeLyf4312klGfacVPz5J/ZJRgYJCEPDQzcYSQODQvhnxktXRpkzhKko5JeYlLc3tI4oApwj2OVqCCW1hr71yWzy6FwIyQmT1IbEQ6oxl0gOkRBPUKTfYW9xsRbEQjDvMR7fYB8hYRBEgVFSkywcjk6Tk5cRS5aY2WqVVWeaUGqqqq/vsHdPEjQfIb/wz///3//wEP///////8JBwcREhEAAAD8+vAtBgQrFw/y59ROFg3xZwxOBwX1dw8tKCbt6ebo2sttFxBNSEfY1c3RxrU3NTNLOTD59dfvWAyOFw63ta9YVlP0hg9pWU+XlpFNJhRwZVcwIxdtaWfRJwzuRwwTWAUJGCPNycZuBwXtOA2nmYyIeG6wFwt2dXDJuaywpZWNiYatqaYUZwTu1rRRRTiPhHcOJwkORwawJxBvJxH5lxONBgOQJREodgvzdioOJSjylyzQRwwNNgX4py3NGAjSNg3yaCvxhi2tNw7qKAzUWA4oaA3ryrD5phSRNg75uC5tNhRwSDGsCQT7xy2uRRHzx5IwhwtuNirVZhEVFhWRVzCPRyzSdzHup29PKSPQVyv5xkzORijU1bjvVyYoVhJTNBavWC/yt4/81jHRiDMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC1g4iDAAAAoHRSTlP+/////////////v/1rP9p///////+//////////8r//////sF////r4gfDQt5A3kD////QAKvA0H+/gD+/v7///////7//v/+///+/v/////+///+/v/+///////+/////v///////////v/////////////+//////////////////////7//////////wv+/////v//////////////gdtawgAANy5JREFUeNqtvYdDG1m24F1CAQmwDA0Yt+3u6Z6Z997m3e/b/ULVVJVy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";
-
 const FONT_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap');
 .kc-bebas { font-family: 'Bebas Neue', sans-serif; }
@@ -43,38 +67,125 @@ const FONT_CSS = `
 @keyframes popIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .pop { animation: popIn .25s ease-out; }
 `;
-
 const ORANGE = "#FF6B1A";
 const GOLD = "#FFB800";
 const CARD = "#181818";
 const BORDER = "rgba(255,107,26,0.22)";
 
 // ---------- The KATL squad (from Squad HQ) ----------
-const SEED_PLAYERS = [
-  { id: "k01", name: "Aditya",         role: "Batting All-Rounder",      nick: "The Powerplay Engine",       ovr: 8 },
-  { id: "k02", name: "Ashish",         role: "Top-Order Batter",         nick: "The Reliable Opener",        ovr: 7 },
-  { id: "k03", name: "Rana",           role: "Aggressive Batter",        nick: "The Enforcer",               ovr: 8 },
-  { id: "k04", name: "Nikhil",         role: "All-Rounder",              nick: "The Complete Package",       ovr: 8 },
-  { id: "k05", name: "Suraj",          role: "All-Rounder",              nick: "The All-Round Warrior",      ovr: 8 },
-  { id: "k06", name: "Bajaj",          role: "Batter / Part-time Bowler",nick: "The Steady Hand",            ovr: 7 },
-  { id: "k07", name: "Mohit",          role: "Batting All-Rounder",      nick: "The Flexible Blade",         ovr: 7 },
-  { id: "k08", name: "Prashant Gupta", role: "WK · Middle Order",        nick: "The Wall Behind the Stumps", ovr: 7 },
-  { id: "k09", name: "Rishav",         role: "WK · Spinner",             nick: "The Spin Doctor",            ovr: 7 },
-  { id: "k10", name: "Vishal",         role: "Middle-Order Batter",      nick: "The Cornerstone",            ovr: 7 },
-  { id: "k11", name: "Chetan",         role: "Batter · Chameleon",       nick: "The Adaptable Blade",        ovr: 7 },
-  { id: "k12", name: "Aadhar",         role: "Batting All-Rounder",      nick: "The Accumulator",            ovr: 7 },
-  { id: "k13", name: "Paresh",         role: "All-Rounder · Death Specialist", nick: "The Death-Over Dynamo", ovr: 7 },
-  { id: "k14", name: "Abhinav Tiwari", role: "Bowler · Pinch Hitter",    nick: "The Surprise Package",       ovr: 7 },
-  { id: "k15", name: "Brijesh",        role: "Pace Bowler",              nick: "The Pace Spearhead",         ovr: 7 },
-  { id: "k16", name: "Bipul",          role: "Bowler · Fielder",         nick: "The Fielding Dynamo",        ovr: 7 },
-  { id: "k17", name: "Ashutosh",       role: "Batter · Rising Aggressor",nick: "The Rising Force",           ovr: 7 },
-];
+const SEED_PLAYERS = [{
+  id: "k01",
+  name: "Aditya",
+  role: "Batting All-Rounder",
+  nick: "The Powerplay Engine",
+  ovr: 8
+}, {
+  id: "k02",
+  name: "Ashish",
+  role: "Top-Order Batter",
+  nick: "The Reliable Opener",
+  ovr: 7
+}, {
+  id: "k03",
+  name: "Rana",
+  role: "Aggressive Batter",
+  nick: "The Enforcer",
+  ovr: 8
+}, {
+  id: "k04",
+  name: "Nikhil",
+  role: "All-Rounder",
+  nick: "The Complete Package",
+  ovr: 8
+}, {
+  id: "k05",
+  name: "Suraj",
+  role: "All-Rounder",
+  nick: "The All-Round Warrior",
+  ovr: 8
+}, {
+  id: "k06",
+  name: "Bajaj",
+  role: "Batter / Part-time Bowler",
+  nick: "The Steady Hand",
+  ovr: 7
+}, {
+  id: "k07",
+  name: "Mohit",
+  role: "Batting All-Rounder",
+  nick: "The Flexible Blade",
+  ovr: 7
+}, {
+  id: "k08",
+  name: "Prashant Gupta",
+  role: "WK · Middle Order",
+  nick: "The Wall Behind the Stumps",
+  ovr: 7
+}, {
+  id: "k09",
+  name: "Rishav",
+  role: "WK · Spinner",
+  nick: "The Spin Doctor",
+  ovr: 7
+}, {
+  id: "k10",
+  name: "Vishal",
+  role: "Middle-Order Batter",
+  nick: "The Cornerstone",
+  ovr: 7
+}, {
+  id: "k11",
+  name: "Chetan",
+  role: "Batter · Chameleon",
+  nick: "The Adaptable Blade",
+  ovr: 7
+}, {
+  id: "k12",
+  name: "Aadhar",
+  role: "Batting All-Rounder",
+  nick: "The Accumulator",
+  ovr: 7
+}, {
+  id: "k13",
+  name: "Paresh",
+  role: "All-Rounder · Death Specialist",
+  nick: "The Death-Over Dynamo",
+  ovr: 7
+}, {
+  id: "k14",
+  name: "Abhinav Tiwari",
+  role: "Bowler · Pinch Hitter",
+  nick: "The Surprise Package",
+  ovr: 7
+}, {
+  id: "k15",
+  name: "Brijesh",
+  role: "Pace Bowler",
+  nick: "The Pace Spearhead",
+  ovr: 7
+}, {
+  id: "k16",
+  name: "Bipul",
+  role: "Bowler · Fielder",
+  nick: "The Fielding Dynamo",
+  ovr: 7
+}, {
+  id: "k17",
+  name: "Ashutosh",
+  role: "Batter · Rising Aggressor",
+  nick: "The Rising Force",
+  ovr: 7
+}];
 
 // ---------- date helpers ----------
-const toISO = (d) => d.toISOString().slice(0, 10);
-const fmt = (iso) => {
+const toISO = d => d.toISOString().slice(0, 10);
+const fmt = iso => {
   const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  return d.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short"
+  });
 };
 function upcomingWeekend(offsetWeeks = 0) {
   const now = new Date();
@@ -89,71 +200,89 @@ function upcomingWeekend(offsetWeeks = 0) {
     const today = new Date(now);
     const yest = new Date(now);
     yest.setDate(now.getDate() - 1);
-    return { sat: toISO(yest), sun: toISO(today) };
+    return {
+      sat: toISO(yest),
+      sun: toISO(today)
+    };
   }
-  return { sat: toISO(sat), sun: toISO(sun) };
+  return {
+    sat: toISO(sat),
+    sun: toISO(sun)
+  };
 }
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
 
 // ---------- storage helpers (Supabase shared backend + localStorage cache) ----------
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 // >>> PASTE YOUR SUPABASE PROJECT VALUES HERE <<<
 const SUPABASE_URL = "https://YOUR-PROJECT-ref.supabase.co";
 const SUPABASE_ANON_KEY = "YOUR-PUBLIC-ANON-KEY";
 // Keys that belong to the whole team (shared in Supabase).
 const SHARED_KEYS = ["katl:players", "katl:avail", "katl:matches", "katl:leaves", "katl:expenses"];
-
-const supaConfigured = () =>
-  SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR-PROJECT") && !SUPABASE_ANON_KEY.includes("YOUR-PUBLIC");
-
+const supaConfigured = () => SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR-PROJECT") && !SUPABASE_ANON_KEY.includes("YOUR-PUBLIC");
 const supaHeaders = () => ({
   "apikey": SUPABASE_ANON_KEY,
   "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-  "Content-Type": "application/json",
+  "Content-Type": "application/json"
 });
-
 async function storageReady() {
   if (!supaConfigured()) return true; // localStorage-only mode still "works"
   try {
-    const r = await fetch(SUPABASE_URL + "/rest/v1/katl_store?select=k&limit=1", { headers: supaHeaders() });
+    const r = await fetch(SUPABASE_URL + "/rest/v1/katl_store?select=k&limit=1", {
+      headers: supaHeaders()
+    });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
-
 const parseVal = (v, fallback) => {
   if (v === null || v === undefined) return fallback;
-  if (typeof v === "string") { try { return JSON.parse(v); } catch { return fallback; } }
+  if (typeof v === "string") {
+    try {
+      return JSON.parse(v);
+    } catch {
+      return fallback;
+    }
+  }
   return v;
 };
 
 // Local cache so the UI is instant and survives offline.
 function lsGet(key, fallback) {
-  try { const raw = localStorage.getItem(key); return raw === null ? fallback : parseVal(raw, fallback); }
-  catch { return fallback; }
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : parseVal(raw, fallback);
+  } catch {
+    return fallback;
+  }
 }
 function lsSet(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {}
 }
-
-const isShared = (key) => SHARED_KEYS.includes(key);
-
+const isShared = key => SHARED_KEYS.includes(key);
 async function loadKey(key, fallback) {
   // Personal keys (e.g. katl:me) never go to the shared backend.
   if (!isShared(key) || !supaConfigured()) return lsGet(key, fallback);
   try {
     const url = SUPABASE_URL + "/rest/v1/katl_store?select=v&k=eq." + encodeURIComponent(key);
-    const r = await fetch(url, { headers: supaHeaders() });
+    const r = await fetch(url, {
+      headers: supaHeaders()
+    });
     if (!r.ok) return lsGet(key, fallback);
     const rows = await r.json();
     if (rows.length && rows[0].v !== null && rows[0].v !== undefined) {
-      lsSet(key, rows[0].v);        // refresh cache
-      return rows[0].v;             // jsonb comes back already parsed
+      lsSet(key, rows[0].v); // refresh cache
+      return rows[0].v; // jsonb comes back already parsed
     }
     return lsGet(key, fallback);
-  } catch { return lsGet(key, fallback); }
+  } catch {
+    return lsGet(key, fallback);
+  }
 }
-
 async function saveKey(key, value) {
   lsSet(key, value); // always cache locally first
   if (!isShared(key) || !supaConfigured()) return true;
@@ -162,84 +291,141 @@ async function saveKey(key, value) {
     const url = SUPABASE_URL + "/rest/v1/katl_store?on_conflict=k";
     const r = await fetch(url, {
       method: "POST",
-      headers: { ...supaHeaders(), "Prefer": "resolution=merge-duplicates,return=minimal" },
-      body: JSON.stringify({ k: key, v: value, updated_at: new Date().toISOString() }),
+      headers: {
+        ...supaHeaders(),
+        "Prefer": "resolution=merge-duplicates,return=minimal"
+      },
+      body: JSON.stringify({
+        k: key,
+        v: value,
+        updated_at: new Date().toISOString()
+      })
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
-
 const unionById = (stored, local) => {
   const map = new Map();
-  [...stored, ...local].forEach((x) => map.set(x.id, x));
+  [...stored, ...local].forEach(x => map.set(x.id, x));
   return [...map.values()];
 };
 const unionAvail = (stored, local) => {
-  const out = { ...stored };
+  const out = {
+    ...stored
+  };
   Object.entries(local).forEach(([date, day]) => {
-    out[date] = { ...(out[date] || {}), ...day };
+    out[date] = {
+      ...(out[date] || {}),
+      ...day
+    };
   });
   return out;
 };
 async function loadMerged(key, fallback, kind = "array") {
-  const remote = await loadKey(key, null);   // Supabase (or local fallback)
-  const cached = lsGet(key, null);           // local cache
+  const remote = await loadKey(key, null); // Supabase (or local fallback)
+  const cached = lsGet(key, null); // local cache
   if (remote === null && cached === null) return fallback;
   if (kind === "array") return unionById(remote || [], cached || []);
   return unionAvail(remote || {}, cached || {});
-};
-async function saveBoth(key, value) { return await saveKey(key, value); }
+}
+;
+async function saveBoth(key, value) {
+  return await saveKey(key, value);
+}
 
 // Merge the official seed squad with whatever is stored.
 // Same-name stored players keep their ids (so old availability/match
 // records stay linked) but pick up the official role/nickname/rating.
 function mergeWithSeed(loaded) {
   const byName = new Map();
-  (loaded || []).forEach((pl) => byName.set(pl.name.trim().toLowerCase(), pl));
+  (loaded || []).forEach(pl => byName.set(pl.name.trim().toLowerCase(), pl));
   const out = [];
-  SEED_PLAYERS.forEach((sp) => {
+  SEED_PLAYERS.forEach(sp => {
     const ex = byName.get(sp.name.toLowerCase());
-    if (ex) { out.push({ ...sp, id: ex.id }); byName.delete(sp.name.toLowerCase()); }
-    else out.push(sp);
+    if (ex) {
+      out.push({
+        ...sp,
+        id: ex.id
+      });
+      byName.delete(sp.name.toLowerCase());
+    } else out.push(sp);
   });
-  byName.forEach((pl) => out.push(pl));
+  byName.forEach(pl => out.push(pl));
   return out;
 }
-
 const STATUS = {
-  in:    { label: "IN",    on: { background: "linear-gradient(90deg,#16a34a,#22c55e)" }, text: "text-green-400" },
-  maybe: { label: "MAYBE", on: { background: "linear-gradient(90deg,#d97706,#FFB800)" }, text: "text-amber-400" },
-  out:   { label: "OUT",   on: { background: "linear-gradient(90deg,#dc2626,#f43f5e)" }, text: "text-rose-400" },
+  in: {
+    label: "IN",
+    on: {
+      background: "linear-gradient(90deg,#16a34a,#22c55e)"
+    },
+    text: "text-green-400"
+  },
+  maybe: {
+    label: "MAYBE",
+    on: {
+      background: "linear-gradient(90deg,#d97706,#FFB800)"
+    },
+    text: "text-amber-400"
+  },
+  out: {
+    label: "OUT",
+    on: {
+      background: "linear-gradient(90deg,#dc2626,#f43f5e)"
+    },
+    text: "text-rose-400"
+  }
 };
-
-const initials = (name) => name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-
-function Avatar({ name, size = 32, fontSize = 12 }) {
-  return (
-    <div className="rounded-full flex items-center justify-center shrink-0 kc-bebas"
-      style={{ width: size, height: size, fontSize, border: `2px solid ${ORANGE}`, background: "rgba(255,107,26,0.12)", color: ORANGE }}>
-      {initials(name)}
-    </div>
-  );
+const initials = name => name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+function Avatar({
+  name,
+  size = 32,
+  fontSize = 12
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rounded-full flex items-center justify-center shrink-0 kc-bebas",
+    style: {
+      width: size,
+      height: size,
+      fontSize,
+      border: `2px solid ${ORANGE}`,
+      background: "rgba(255,107,26,0.12)",
+      color: ORANGE
+    }
+  }, initials(name));
 }
-
-function Card({ children, className = "", style = {} }) {
-  return (
-    <div className={`rounded-xl ${className}`} style={{ background: CARD, border: `1px solid ${BORDER}`, ...style }}>
-      {children}
-    </div>
-  );
+function Card({
+  children,
+  className = "",
+  style = {}
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: `rounded-xl ${className}`,
+    style: {
+      background: CARD,
+      border: `1px solid ${BORDER}`,
+      ...style
+    }
+  }, children);
 }
-
 const inputStyle = {
-  background: "#0f0f0f", border: "1px solid rgba(255,255,255,0.14)", color: "#f0ede8",
-  borderRadius: 8, padding: "8px 12px", width: "100%", marginTop: 4, colorScheme: "dark",
+  background: "#0f0f0f",
+  border: "1px solid rgba(255,255,255,0.14)",
+  color: "#f0ede8",
+  borderRadius: 8,
+  padding: "8px 12px",
+  width: "100%",
+  marginTop: 4,
+  colorScheme: "dark"
 };
 const btnOrange = {
-  background: `linear-gradient(90deg, ${ORANGE}, #ff8c42)`, color: "#fff",
-  borderRadius: 10, boxShadow: "0 2px 10px rgba(255,107,26,0.35)",
+  background: `linear-gradient(90deg, ${ORANGE}, #ff8c42)`,
+  color: "#fff",
+  borderRadius: 10,
+  boxShadow: "0 2px 10px rgba(255,107,26,0.35)"
 };
-
 function App() {
   const [tab, setTab] = useState("weekend");
   const [loading, setLoading] = useState(true);
@@ -255,9 +441,7 @@ function App() {
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState(null);
   const [saveVerified, setSaveVerified] = useState(null);
-
   const weekend = useMemo(() => upcomingWeekend(weekOffset), [weekOffset]);
-
   async function reloadAll() {
     setSyncing(true);
     const ready = await storageReady();
@@ -274,54 +458,64 @@ function App() {
         }
       } catch {}
       setSaveVerified(verified);
-
-      const [p, a, m, l, ex, meStored] = await Promise.all([
-        loadMerged("katl:players", []),
-        loadMerged("katl:avail", {}, "object"),
-        loadMerged("katl:matches", []),
-        loadMerged("katl:leaves", []),
-        loadMerged("katl:expenses", []),
-        loadKey("katl:me", null),
-      ]);
+      const [p, a, m, l, ex, meStored] = await Promise.all([loadMerged("katl:players", []), loadMerged("katl:avail", {}, "object"), loadMerged("katl:matches", []), loadMerged("katl:leaves", []), loadMerged("katl:expenses", []), loadKey("katl:me", null)]);
       const squad = mergeWithSeed(p);
-      setPlayers((cur) => mergeWithSeed(unionById(squad, cur)));
-      setAvail((cur) => unionAvail(a, cur));
-      setMatches((cur) => unionById(m, cur));
-      setLeaves((cur) => unionById(l, cur));
-      setExpenses((cur) => unionById(ex, cur));
+      setPlayers(cur => mergeWithSeed(unionById(squad, cur)));
+      setAvail(cur => unionAvail(a, cur));
+      setMatches(cur => unionById(m, cur));
+      setLeaves(cur => unionById(l, cur));
+      setExpenses(cur => unionById(ex, cur));
       if (meStored) setMe(meStored);
       saveBoth("katl:players", squad);
-      setLastSync(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }));
+      setLastSync(new Date().toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit"
+      }));
     }
     setSyncing(false);
     setLoading(false);
   }
-
-  useEffect(() => { reloadAll(); }, []);
-
-  const ping = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
-
+  useEffect(() => {
+    reloadAll();
+  }, []);
+  const ping = msg => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2200);
+  };
   async function addPlayer(name, role) {
     const fresh = mergeWithSeed(await loadMerged("katl:players", []));
     const base = unionById(fresh, players);
-    if (base.some((p) => p.name.toLowerCase() === name.toLowerCase())) { ping("Player already exists"); setPlayers(base); return; }
-    const next = [...base, { id: uid(), name, role: role || "" }];
+    if (base.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+      ping("Player already exists");
+      setPlayers(base);
+      return;
+    }
+    const next = [...base, {
+      id: uid(),
+      name,
+      role: role || ""
+    }];
     setPlayers(next);
     const ok = await saveBoth("katl:players", next);
     ping(ok ? `${name} added to squad` : "Couldn't save — please try again");
   }
   async function removePlayer(id) {
     const fresh = await loadMerged("katl:players", []);
-    const next = unionById(fresh, players).filter((p) => p.id !== id);
+    const next = unionById(fresh, players).filter(p => p.id !== id);
     setPlayers(next);
     if (!(await saveBoth("katl:players", next))) ping("Couldn't save — please try again");
   }
   async function setStatus(dateISO, playerId, status) {
     const fresh = await loadMerged("katl:avail", {}, "object");
     const base = unionAvail(fresh, avail);
-    const day = { ...(base[dateISO] || {}) };
-    if (day[playerId] === status) delete day[playerId]; else day[playerId] = status;
-    const next = { ...base, [dateISO]: day };
+    const day = {
+      ...(base[dateISO] || {})
+    };
+    if (day[playerId] === status) delete day[playerId];else day[playerId] = status;
+    const next = {
+      ...base,
+      [dateISO]: day
+    };
     setAvail(next);
     if (!(await saveBoth("katl:avail", next))) ping("Couldn't save — please try again");
   }
@@ -334,7 +528,7 @@ function App() {
   }
   async function deleteMatch(id) {
     const fresh = await loadMerged("katl:matches", []);
-    const next = unionById(fresh, matches).filter((m) => m.id !== id);
+    const next = unionById(fresh, matches).filter(m => m.id !== id);
     setMatches(next);
     if (!(await saveBoth("katl:matches", next))) ping("Couldn't save — please try again");
   }
@@ -347,7 +541,7 @@ function App() {
   }
   async function deleteLeave(id) {
     const fresh = await loadMerged("katl:leaves", []);
-    const next = unionById(fresh, leaves).filter((l) => l.id !== id);
+    const next = unionById(fresh, leaves).filter(l => l.id !== id);
     setLeaves(next);
     if (!(await saveBoth("katl:leaves", next))) ping("Couldn't save — please try again");
   }
@@ -360,406 +554,687 @@ function App() {
   }
   async function deleteExpense(id) {
     const fresh = await loadMerged("katl:expenses", []);
-    const next = unionById(fresh, expenses).filter((e) => e.id !== id);
+    const next = unionById(fresh, expenses).filter(e => e.id !== id);
     setExpenses(next);
     if (!(await saveBoth("katl:expenses", next))) ping("Couldn't save — please try again");
   }
-  async function chooseMe(id) { setMe(id); await saveKey("katl:me", id); }
-
-  const onLeave = (playerId, dateISO) =>
-    leaves.some((l) => l.playerId === playerId && l.from <= dateISO && dateISO <= l.to);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 kc-body" style={{ background: "#080808" }}>
-        <style>{FONT_CSS}</style>
-        <img src={KATL_LOGO} alt="KATL" style={{ width: 110 }} />
-        <div className="text-neutral-500 kc-display tracking-widest uppercase">Loading the scoreboard…</div>
-      </div>
-    );
+  async function chooseMe(id) {
+    setMe(id);
+    await saveKey("katl:me", id);
   }
-
-  return (
-    <div className="min-h-screen kc-body" style={{ background: "#080808", color: "#f0ede8" }}>
-      <style>{FONT_CSS}</style>
-
-      {/* Header */}
-      <header style={{ background: "radial-gradient(ellipse 90% 100% at 50% -20%, rgba(255,107,26,0.28) 0%, #0a0a0a 70%)", borderBottom: `1px solid ${BORDER}` }}>
-        <div className="max-w-3xl mx-auto px-4 pt-5 pb-3">
-          <div className="flex items-end justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-3">
-              <img src={KATL_LOGO} alt="KATL logo" style={{ width: 66, filter: "drop-shadow(0 0 14px rgba(255,107,26,0.5))" }} />
-              <div>
-                <div className="text-[10px] uppercase font-semibold" style={{ color: GOLD, letterSpacing: "0.3em" }}>Weekend Cricket Club</div>
-                <h1 className="kc-bebas leading-none" style={{ fontSize: 52, letterSpacing: 4 }}>
-                  KATL <span style={{ color: ORANGE }}>CRICKET</span>
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <ScoreStrip players={players} avail={avail} weekend={weekend} onLeave={onLeave} />
-              <button onClick={reloadAll} title="Refresh team data" disabled={syncing}
-                className="rounded-xl px-3 py-2 text-lg disabled:opacity-50"
-                style={{ border: `1px solid ${BORDER}`, background: "rgba(0,0,0,0.4)", color: GOLD }}>
-                {syncing ? "…" : "⟳"}
-              </button>
-            </div>
-          </div>
-        </div>
-        <nav className="max-w-3xl mx-auto px-4 flex gap-0 overflow-x-auto">
-          {[
-            ["weekend", "This Weekend"],
-            ["matches", "Matches"],
-            ["expenses", "Expenses"],
-            ["stats", "Stats"],
-            ["leaves", "Leaves"],
-            ["squad", "Squad"],
-          ].map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id)}
-              className="kc-display uppercase whitespace-nowrap px-4 py-3 text-sm font-semibold transition-colors"
-              style={{
-                letterSpacing: 2,
-                color: tab === id ? ORANGE : "#888",
-                borderBottom: tab === id ? `2px solid ${ORANGE}` : "2px solid transparent",
-              }}>
-              {label}
-            </button>
-          ))}
-        </nav>
-      </header>
-
-      {!storageOk ? (
-        <div className="text-white text-sm text-center px-4 py-2" style={{ background: "#dc2626" }}>
-          ⚠️ Storage NOT connected — changes will be lost when you close the app. Tap ⟳ above to retry.
-        </div>
-      ) : (
-        <div className="text-[11px] text-center px-4 py-1" style={{ background: "rgba(255,107,26,0.1)", color: "#c9a", borderBottom: `1px solid ${BORDER}` }}>
-          <span style={{ color: GOLD }}>{supaConfigured() ? "Team sync ON" : "Local only"} {saveVerified ? "✓" : ""}</span> · saves {saveVerified === null ? "checking…" : saveVerified ? "ok" : (supaConfigured() ? "BACKEND UNREACHABLE ✗" : "local ✓")} · {players.length} players · last sync {lastSync || "—"}
-        </div>
-      )}
-
-      <main className="max-w-3xl mx-auto px-4 py-6 pb-24">
-        {tab === "weekend" && (
-          <WeekendTab weekend={weekend} weekOffset={weekOffset} setWeekOffset={setWeekOffset}
-            players={players} avail={avail} setStatus={setStatus} me={me} chooseMe={chooseMe} onLeave={onLeave} />
-        )}
-        {tab === "matches" && (
-          <MatchesTab players={players} matches={matches} avail={avail} addMatch={addMatch} deleteMatch={deleteMatch} />
-        )}
-        {tab === "stats" && <StatsTab players={players} matches={matches} avail={avail} />}
-        {tab === "expenses" && <ExpensesTab players={players} matches={matches} expenses={expenses} addExpense={addExpense} deleteExpense={deleteExpense} me={me} />}
-        {tab === "leaves" && <LeavesTab players={players} leaves={leaves} addLeave={addLeave} deleteLeave={deleteLeave} me={me} />}
-        {tab === "squad" && <SquadTab players={players} addPlayer={addPlayer} removePlayer={removePlayer} me={me} chooseMe={chooseMe} matches={matches} />}
-      </main>
-
-      {toast && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-sm pop"
-          style={{ background: "#181818", border: `1px solid ${ORANGE}`, color: "#fff", boxShadow: "0 4px 20px rgba(255,107,26,0.3)" }}>
-          {toast}
-        </div>
-      )}
-    </div>
-  );
+  const onLeave = (playerId, dateISO) => leaves.some(l => l.playerId === playerId && l.from <= dateISO && dateISO <= l.to);
+  if (loading) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "min-h-screen flex flex-col items-center justify-center gap-4 kc-body",
+      style: {
+        background: "#080808"
+      }
+    }, /*#__PURE__*/React.createElement("style", null, FONT_CSS), /*#__PURE__*/React.createElement("img", {
+      src: KATL_LOGO,
+      alt: "KATL",
+      style: {
+        width: 110
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "text-neutral-500 kc-display tracking-widest uppercase"
+    }, "Loading the scoreboard…"));
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "min-h-screen kc-body",
+    style: {
+      background: "#080808",
+      color: "#f0ede8"
+    }
+  }, /*#__PURE__*/React.createElement("style", null, FONT_CSS), /*#__PURE__*/React.createElement("header", {
+    style: {
+      background: "radial-gradient(ellipse 90% 100% at 50% -20%, rgba(255,107,26,0.28) 0%, #0a0a0a 70%)",
+      borderBottom: `1px solid ${BORDER}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "max-w-3xl mx-auto px-4 pt-5 pb-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-end justify-between gap-3 flex-wrap"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: KATL_LOGO,
+    alt: "KATL logo",
+    style: {
+      width: 66,
+      filter: "drop-shadow(0 0 14px rgba(255,107,26,0.5))"
+    }
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase font-semibold",
+    style: {
+      color: GOLD,
+      letterSpacing: "0.3em"
+    }
+  }, "Weekend Cricket Club"), /*#__PURE__*/React.createElement("h1", {
+    className: "kc-bebas leading-none",
+    style: {
+      fontSize: 52,
+      letterSpacing: 4
+    }
+  }, "KATL ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: ORANGE
+    }
+  }, "CRICKET")))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(ScoreStrip, {
+    players: players,
+    avail: avail,
+    weekend: weekend,
+    onLeave: onLeave
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: reloadAll,
+    title: "Refresh team data",
+    disabled: syncing,
+    className: "rounded-xl px-3 py-2 text-lg disabled:opacity-50",
+    style: {
+      border: `1px solid ${BORDER}`,
+      background: "rgba(0,0,0,0.4)",
+      color: GOLD
+    }
+  }, syncing ? "…" : "⟳")))), /*#__PURE__*/React.createElement("nav", {
+    className: "max-w-3xl mx-auto px-4 flex gap-0 overflow-x-auto"
+  }, [["weekend", "This Weekend"], ["matches", "Matches"], ["expenses", "Expenses"], ["stats", "Stats"], ["leaves", "Leaves"], ["squad", "Squad"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    onClick: () => setTab(id),
+    className: "kc-display uppercase whitespace-nowrap px-4 py-3 text-sm font-semibold transition-colors",
+    style: {
+      letterSpacing: 2,
+      color: tab === id ? ORANGE : "#888",
+      borderBottom: tab === id ? `2px solid ${ORANGE}` : "2px solid transparent"
+    }
+  }, label)))), !storageOk ? /*#__PURE__*/React.createElement("div", {
+    className: "text-white text-sm text-center px-4 py-2",
+    style: {
+      background: "#dc2626"
+    }
+  }, "⚠️ Storage NOT connected — changes will be lost when you close the app. Tap ⟳ above to retry.") : /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-center px-4 py-1",
+    style: {
+      background: "rgba(255,107,26,0.1)",
+      color: "#c9a",
+      borderBottom: `1px solid ${BORDER}`
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: GOLD
+    }
+  }, supaConfigured() ? "Team sync ON" : "Local only", " ", saveVerified ? "✓" : ""), " · saves ", saveVerified === null ? "checking…" : saveVerified ? "ok" : supaConfigured() ? "BACKEND UNREACHABLE ✗" : "local ✓", " · ", players.length, " players · last sync ", lastSync || "—"), /*#__PURE__*/React.createElement("main", {
+    className: "max-w-3xl mx-auto px-4 py-6 pb-24"
+  }, tab === "weekend" && /*#__PURE__*/React.createElement(WeekendTab, {
+    weekend: weekend,
+    weekOffset: weekOffset,
+    setWeekOffset: setWeekOffset,
+    players: players,
+    avail: avail,
+    setStatus: setStatus,
+    me: me,
+    chooseMe: chooseMe,
+    onLeave: onLeave
+  }), tab === "matches" && /*#__PURE__*/React.createElement(MatchesTab, {
+    players: players,
+    matches: matches,
+    avail: avail,
+    addMatch: addMatch,
+    deleteMatch: deleteMatch
+  }), tab === "stats" && /*#__PURE__*/React.createElement(StatsTab, {
+    players: players,
+    matches: matches,
+    avail: avail
+  }), tab === "expenses" && /*#__PURE__*/React.createElement(ExpensesTab, {
+    players: players,
+    matches: matches,
+    expenses: expenses,
+    addExpense: addExpense,
+    deleteExpense: deleteExpense,
+    me: me
+  }), tab === "leaves" && /*#__PURE__*/React.createElement(LeavesTab, {
+    players: players,
+    leaves: leaves,
+    addLeave: addLeave,
+    deleteLeave: deleteLeave,
+    me: me
+  }), tab === "squad" && /*#__PURE__*/React.createElement(SquadTab, {
+    players: players,
+    addPlayer: addPlayer,
+    removePlayer: removePlayer,
+    me: me,
+    chooseMe: chooseMe,
+    matches: matches
+  })), toast && /*#__PURE__*/React.createElement("div", {
+    className: "fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-sm pop",
+    style: {
+      background: "#181818",
+      border: `1px solid ${ORANGE}`,
+      color: "#fff",
+      boxShadow: "0 4px 20px rgba(255,107,26,0.3)"
+    }
+  }, toast));
 }
 
 // ---------- Header score strip ----------
-function ScoreStrip({ players, avail, weekend, onLeave }) {
-  const count = (dateISO) => {
+function ScoreStrip({
+  players,
+  avail,
+  weekend,
+  onLeave
+}) {
+  const count = dateISO => {
     const day = avail[dateISO] || {};
-    let inN = 0, outN = 0, maybeN = 0;
-    players.forEach((p) => {
+    let inN = 0,
+      outN = 0,
+      maybeN = 0;
+    players.forEach(p => {
       const s = onLeave(p.id, dateISO) ? "out" : day[p.id];
-      if (s === "in") inN++; else if (s === "out") outN++; else if (s === "maybe") maybeN++;
+      if (s === "in") inN++;else if (s === "out") outN++;else if (s === "maybe") maybeN++;
     });
-    return { inN, outN, maybeN };
+    return {
+      inN,
+      outN,
+      maybeN
+    };
   };
   const sat = count(weekend.sat);
   const sun = count(weekend.sun);
-  const Cell = ({ label, c }) => (
-    <div className="text-center px-3">
-      <div className="text-[10px] uppercase" style={{ color: "#998", letterSpacing: 2 }}>{label}</div>
-      <div className="kc-bebas text-2xl tabular-nums" style={{ letterSpacing: 1 }}>
-        <span className="text-green-400">{c.inN}</span>
-        <span className="text-neutral-600 mx-1">/</span>
-        <span style={{ color: GOLD }}>{c.maybeN}</span>
-        <span className="text-neutral-600 mx-1">/</span>
-        <span className="text-rose-400">{c.outN}</span>
-      </div>
-    </div>
-  );
-  return (
-    <div className="flex rounded-xl py-1" style={{ border: `1px solid ${BORDER}`, background: "rgba(0,0,0,0.45)" }}>
-      <Cell label={fmt(weekend.sat)} c={sat} />
-      <div style={{ width: 1, background: BORDER }} />
-      <Cell label={fmt(weekend.sun)} c={sun} />
-    </div>
-  );
+  const Cell = ({
+    label,
+    c
+  }) => /*#__PURE__*/React.createElement("div", {
+    className: "text-center px-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase",
+    style: {
+      color: "#998",
+      letterSpacing: 2
+    }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-2xl tabular-nums",
+    style: {
+      letterSpacing: 1
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-green-400"
+  }, c.inN), /*#__PURE__*/React.createElement("span", {
+    className: "text-neutral-600 mx-1"
+  }, "/"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: GOLD
+    }
+  }, c.maybeN), /*#__PURE__*/React.createElement("span", {
+    className: "text-neutral-600 mx-1"
+  }, "/"), /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-400"
+  }, c.outN)));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "flex rounded-xl py-1",
+    style: {
+      border: `1px solid ${BORDER}`,
+      background: "rgba(0,0,0,0.45)"
+    }
+  }, /*#__PURE__*/React.createElement(Cell, {
+    label: fmt(weekend.sat),
+    c: sat
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 1,
+      background: BORDER
+    }
+  }), /*#__PURE__*/React.createElement(Cell, {
+    label: fmt(weekend.sun),
+    c: sun
+  }));
 }
 
 // ---------- Weekend availability ----------
-function WeekendTab({ weekend, weekOffset, setWeekOffset, players, avail, setStatus, me, chooseMe, onLeave }) {
+function WeekendTab({
+  weekend,
+  weekOffset,
+  setWeekOffset,
+  players,
+  avail,
+  setStatus,
+  me,
+  chooseMe,
+  onLeave
+}) {
   const [day, setDay] = useState("sat");
   const dateISO = weekend[day];
   const dayAvail = avail[dateISO] || {};
-  const mePlayer = players.find((p) => p.id === me);
-
+  const mePlayer = players.find(p => p.id === me);
   const sorted = [...players].sort((a, b) => a.name.localeCompare(b.name));
-  const groups = { in: [], maybe: [], out: [], none: [] };
-  sorted.forEach((p) => {
+  const groups = {
+    in: [],
+    maybe: [],
+    out: [],
+    none: []
+  };
+  sorted.forEach(p => {
     const s = onLeave(p.id, dateISO) ? "leave" : dayAvail[p.id];
-    if (s === "leave") groups.out.push({ ...p, leave: true });
-    else if (s) groups[s].push(p);
-    else groups.none.push(p);
+    if (s === "leave") groups.out.push({
+      ...p,
+      leave: true
+    });else if (s) groups[s].push(p);else groups.none.push(p);
   });
-
-  const navBtn = { border: "1px solid rgba(255,255,255,0.15)", background: CARD, color: "#ddd", borderRadius: 10 };
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <button onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))} disabled={weekOffset === 0}
-            className="px-3 py-1.5 disabled:opacity-40" style={navBtn}>←</button>
-          <div className="kc-bebas text-2xl" style={{ letterSpacing: 2 }}>
-            {weekOffset === 0 ? "THIS WEEKEND" : `IN ${weekOffset} WEEK${weekOffset > 1 ? "S" : ""}`}
-          </div>
-          <button onClick={() => setWeekOffset(weekOffset + 1)} className="px-3 py-1.5" style={navBtn}>→</button>
-        </div>
-        <div className="flex rounded-xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-          {["sat", "sun"].map((d) => (
-            <button key={d} onClick={() => setDay(d)}
-              className="px-4 py-1.5 kc-display text-base font-semibold uppercase"
-              style={{ letterSpacing: 1, ...(day === d ? btnOrange : { background: CARD, color: "#999" }), borderRadius: 0 }}>
-              {fmt(weekend[d])}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* My quick response */}
-      <Card className="p-4" style={{ borderColor: "rgba(255,107,26,0.45)" }}>
-        {mePlayer ? (
-          <>
-            <div className="text-sm text-neutral-400 mb-2 flex items-center gap-2">
-              <Avatar name={mePlayer.name} />
-              <span>Marking for <span className="font-semibold text-white">{mePlayer.name}</span> · {fmt(dateISO)}</span>
-              {onLeave(me, dateISO) && <span className="text-rose-400 font-medium">(on leave this day)</span>}
-            </div>
-            <div className="flex gap-2">
-              {Object.entries(STATUS).map(([key, s]) => (
-                <button key={key} onClick={() => setStatus(dateISO, me, key)}
-                  className="flex-1 py-2.5 rounded-xl kc-bebas text-xl transition-all"
-                  style={{
-                    letterSpacing: 3,
-                    ...(dayAvail[me] === key
-                      ? { ...s.on, color: "#fff", border: "2px solid transparent" }
-                      : { background: "#101010", border: "1px solid rgba(255,255,255,0.14)", color: "#999" }),
-                  }}>
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div>
-            <div className="text-sm text-neutral-400 mb-2">Who are you? Pick your name once and this device remembers it.</div>
-            <div className="flex flex-wrap gap-2">
-              {sorted.map((p) => (
-                <button key={p.id} onClick={() => chooseMe(p.id)}
-                  className="px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5"
-                  style={{ border: "1px solid rgba(255,255,255,0.15)", background: CARD, color: "#ddd" }}>
-                  <Avatar name={p.name} size={20} fontSize={9} />{p.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Team sheet */}
-      {["in", "maybe", "out", "none"].map((g) => {
-        const list = groups[g];
-        if (!list.length) return null;
-        const titles = { in: "Available", maybe: "Maybe", out: "Not available / on leave", none: "Not responded yet" };
-        const dotColors = { in: "#4ADE80", maybe: GOLD, out: "#f43f5e", none: "#555" };
-        return (
-          <div key={g}>
-            <div className="kc-display text-base font-bold uppercase text-neutral-400 mb-2 flex items-center gap-2" style={{ letterSpacing: 2 }}>
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: dotColors[g] }} />
-              {titles[g]} <span className="text-neutral-600">({list.length})</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {list.map((p) => (
-                <div key={p.id} className="px-3 py-2 rounded-xl text-sm flex items-center gap-2"
-                  style={{ background: CARD, border: `1px solid ${g === "none" ? "rgba(255,255,255,0.08)" : BORDER}`, opacity: g === "none" ? 0.65 : 1 }}>
-                  <Avatar name={p.name} size={24} fontSize={10} />
-                  <span className="font-medium truncate text-neutral-200">{p.name}</span>
-                  {p.leave && <span className="text-[10px] uppercase text-rose-400 ml-auto" style={{ letterSpacing: 1 }}>leave</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+  const navBtn = {
+    border: "1px solid rgba(255,255,255,0.15)",
+    background: CARD,
+    color: "#ddd",
+    borderRadius: 10
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "space-y-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between flex-wrap gap-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setWeekOffset(Math.max(0, weekOffset - 1)),
+    disabled: weekOffset === 0,
+    className: "px-3 py-1.5 disabled:opacity-40",
+    style: navBtn
+  }, "←"), /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-2xl",
+    style: {
+      letterSpacing: 2
+    }
+  }, weekOffset === 0 ? "THIS WEEKEND" : `IN ${weekOffset} WEEK${weekOffset > 1 ? "S" : ""}`), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setWeekOffset(weekOffset + 1),
+    className: "px-3 py-1.5",
+    style: navBtn
+  }, "→")), /*#__PURE__*/React.createElement("div", {
+    className: "flex rounded-xl overflow-hidden",
+    style: {
+      border: `1px solid ${BORDER}`
+    }
+  }, ["sat", "sun"].map(d => /*#__PURE__*/React.createElement("button", {
+    key: d,
+    onClick: () => setDay(d),
+    className: "px-4 py-1.5 kc-display text-base font-semibold uppercase",
+    style: {
+      letterSpacing: 1,
+      ...(day === d ? btnOrange : {
+        background: CARD,
+        color: "#999"
+      }),
+      borderRadius: 0
+    }
+  }, fmt(weekend[d]))))), /*#__PURE__*/React.createElement(Card, {
+    className: "p-4",
+    style: {
+      borderColor: "rgba(255,107,26,0.45)"
+    }
+  }, mePlayer ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-neutral-400 mb-2 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: mePlayer.name
+  }), /*#__PURE__*/React.createElement("span", null, "Marking for ", /*#__PURE__*/React.createElement("span", {
+    className: "font-semibold text-white"
+  }, mePlayer.name), " · ", fmt(dateISO)), onLeave(me, dateISO) && /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-400 font-medium"
+  }, "(on leave this day)")), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2"
+  }, Object.entries(STATUS).map(([key, s]) => /*#__PURE__*/React.createElement("button", {
+    key: key,
+    onClick: () => setStatus(dateISO, me, key),
+    className: "flex-1 py-2.5 rounded-xl kc-bebas text-xl transition-all",
+    style: {
+      letterSpacing: 3,
+      ...(dayAvail[me] === key ? {
+        ...s.on,
+        color: "#fff",
+        border: "2px solid transparent"
+      } : {
+        background: "#101010",
+        border: "1px solid rgba(255,255,255,0.14)",
+        color: "#999"
+      })
+    }
+  }, s.label)))) : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-neutral-400 mb-2"
+  }, "Who are you? Pick your name once and this device remembers it."), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, sorted.map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    onClick: () => chooseMe(p.id),
+    className: "px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5",
+    style: {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: CARD,
+      color: "#ddd"
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: p.name,
+    size: 20,
+    fontSize: 9
+  }), p.name))))), ["in", "maybe", "out", "none"].map(g => {
+    const list = groups[g];
+    if (!list.length) return null;
+    const titles = {
+      in: "Available",
+      maybe: "Maybe",
+      out: "Not available / on leave",
+      none: "Not responded yet"
+    };
+    const dotColors = {
+      in: "#4ADE80",
+      maybe: GOLD,
+      out: "#f43f5e",
+      none: "#555"
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: g
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2 flex items-center gap-2",
+      style: {
+        letterSpacing: 2
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-2.5 h-2.5 rounded-full",
+      style: {
+        background: dotColors[g]
+      }
+    }), titles[g], " ", /*#__PURE__*/React.createElement("span", {
+      className: "text-neutral-600"
+    }, "(", list.length, ")")), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-2 sm:grid-cols-3 gap-2"
+    }, list.map(p => /*#__PURE__*/React.createElement("div", {
+      key: p.id,
+      className: "px-3 py-2 rounded-xl text-sm flex items-center gap-2",
+      style: {
+        background: CARD,
+        border: `1px solid ${g === "none" ? "rgba(255,255,255,0.08)" : BORDER}`,
+        opacity: g === "none" ? 0.65 : 1
+      }
+    }, /*#__PURE__*/React.createElement(Avatar, {
+      name: p.name,
+      size: 24,
+      fontSize: 10
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "font-medium truncate text-neutral-200"
+    }, p.name), p.leave && /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] uppercase text-rose-400 ml-auto",
+      style: {
+        letterSpacing: 1
+      }
+    }, "leave")))));
+  }));
 }
 
 // ---------- Matches & attendance ----------
-function MatchesTab({ players, matches, avail, addMatch, deleteMatch }) {
+function MatchesTab({
+  players,
+  matches,
+  avail,
+  addMatch,
+  deleteMatch
+}) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(toISO(new Date()));
   const [opponent, setOpponent] = useState("");
   const [result, setResult] = useState("");
   const [played, setPlayed] = useState([]);
-
   const prefillFromAvail = () => {
     const day = avail[date] || {};
-    setPlayed(players.filter((p) => day[p.id] === "in").map((p) => p.id));
+    setPlayed(players.filter(p => day[p.id] === "in").map(p => p.id));
   };
-  const toggle = (id) => setPlayed((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-
+  const toggle = id => setPlayed(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const save = () => {
     if (!played.length) return;
-    addMatch({ id: uid(), date, opponent: opponent.trim(), result: result.trim(), played });
-    setOpen(false); setOpponent(""); setResult(""); setPlayed([]);
+    addMatch({
+      id: uid(),
+      date,
+      opponent: opponent.trim(),
+      result: result.trim(),
+      played
+    });
+    setOpen(false);
+    setOpponent("");
+    setResult("");
+    setPlayed([]);
   };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="kc-bebas text-3xl" style={{ letterSpacing: 2 }}>MATCH <span style={{ color: ORANGE }}>LOG</span></div>
-        <button onClick={() => setOpen(!open)} className="px-4 py-2 kc-display font-semibold uppercase" style={{ ...btnOrange, letterSpacing: 1 }}>
-          {open ? "Cancel" : "+ Log a match"}
-        </button>
-      </div>
-
-      {open && (
-        <Card className="p-4 space-y-3 pop" style={{ borderColor: "rgba(255,107,26,0.45)" }}>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-sm text-neutral-400">Date
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
-            </label>
-            <label className="text-sm text-neutral-400">Opponent (optional)
-              <input value={opponent} onChange={(e) => setOpponent(e.target.value)} placeholder="e.g., Whitefield XI" style={inputStyle} />
-            </label>
-          </div>
-          <label className="text-sm text-neutral-400 block">Result (optional)
-            <input value={result} onChange={(e) => setResult(e.target.value)} placeholder="Won by 24 runs" style={inputStyle} />
-          </label>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-medium text-neutral-300">Who played? ({played.length} selected)</div>
-              <button onClick={prefillFromAvail} className="text-sm underline" style={{ color: GOLD }}>Prefill from availability</button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[...players].sort((a, b) => a.name.localeCompare(b.name)).map((p) => (
-                <button key={p.id} onClick={() => toggle(p.id)}
-                  className="px-3 py-1.5 rounded-full text-sm transition-colors flex items-center gap-1.5"
-                  style={played.includes(p.id)
-                    ? { ...btnOrange, borderRadius: 999 }
-                    : { border: "1px solid rgba(255,255,255,0.15)", background: "#101010", color: "#999" }}>
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button onClick={save} disabled={!played.length}
-            className="w-full py-2.5 kc-bebas text-xl disabled:opacity-40" style={{ ...btnOrange, letterSpacing: 3 }}>
-            SAVE MATCH
-          </button>
-        </Card>
-      )}
-
-      {matches.length === 0 ? (
-        <div className="text-neutral-500 text-center py-10">No matches logged yet. Log your first weekend game.</div>
-      ) : (
-        matches.map((m) => (
-          <Card key={m.id} className="p-4" style={{ borderLeft: `3px solid ${ORANGE}` }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="kc-display text-lg font-bold text-white" style={{ letterSpacing: 0.5 }}>
-                  {fmt(m.date)}{m.opponent ? ` · vs ${m.opponent}` : ""}
-                </div>
-                {m.result && <div className="text-sm font-semibold" style={{ color: "#4ADE80" }}>{m.result}</div>}
-              </div>
-              <button onClick={() => { if (confirm("Delete this match?")) deleteMatch(m.id); }}
-                className="text-neutral-500 hover:text-rose-400 text-sm">Delete</button>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {m.played.map((id) => {
-                const p = players.find((x) => x.id === id);
-                return p ? (
-                  <span key={id} className="px-2 py-0.5 rounded-full text-xs"
-                    style={{ background: "rgba(255,107,26,0.1)", color: "#ffb98a", border: `1px solid ${BORDER}` }}>{p.name}</span>
-                ) : null;
-              })}
-            </div>
-          </Card>
-        ))
-      )}
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-3xl",
+    style: {
+      letterSpacing: 2
+    }
+  }, "MATCH ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: ORANGE
+    }
+  }, "LOG")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setOpen(!open),
+    className: "px-4 py-2 kc-display font-semibold uppercase",
+    style: {
+      ...btnOrange,
+      letterSpacing: 1
+    }
+  }, open ? "Cancel" : "+ Log a match")), open && /*#__PURE__*/React.createElement(Card, {
+    className: "p-4 space-y-3 pop",
+    style: {
+      borderColor: "rgba(255,107,26,0.45)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-3"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "Date", /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: date,
+    onChange: e => setDate(e.target.value),
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "Opponent (optional)", /*#__PURE__*/React.createElement("input", {
+    value: opponent,
+    onChange: e => setOpponent(e.target.value),
+    placeholder: "e.g., Whitefield XI",
+    style: inputStyle
+  }))), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400 block"
+  }, "Result (optional)", /*#__PURE__*/React.createElement("input", {
+    value: result,
+    onChange: e => setResult(e.target.value),
+    placeholder: "Won by 24 runs",
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-medium text-neutral-300"
+  }, "Who played? (", played.length, " selected)"), /*#__PURE__*/React.createElement("button", {
+    onClick: prefillFromAvail,
+    className: "text-sm underline",
+    style: {
+      color: GOLD
+    }
+  }, "Prefill from availability")), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, [...players].sort((a, b) => a.name.localeCompare(b.name)).map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    onClick: () => toggle(p.id),
+    className: "px-3 py-1.5 rounded-full text-sm transition-colors flex items-center gap-1.5",
+    style: played.includes(p.id) ? {
+      ...btnOrange,
+      borderRadius: 999
+    } : {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "#101010",
+      color: "#999"
+    }
+  }, p.name)))), /*#__PURE__*/React.createElement("button", {
+    onClick: save,
+    disabled: !played.length,
+    className: "w-full py-2.5 kc-bebas text-xl disabled:opacity-40",
+    style: {
+      ...btnOrange,
+      letterSpacing: 3
+    }
+  }, "SAVE MATCH")), matches.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-neutral-500 text-center py-10"
+  }, "No matches logged yet. Log your first weekend game.") : matches.map(m => /*#__PURE__*/React.createElement(Card, {
+    key: m.id,
+    className: "p-4",
+    style: {
+      borderLeft: `3px solid ${ORANGE}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-lg font-bold text-white",
+    style: {
+      letterSpacing: 0.5
+    }
+  }, fmt(m.date), m.opponent ? ` · vs ${m.opponent}` : ""), m.result && /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-semibold",
+    style: {
+      color: "#4ADE80"
+    }
+  }, m.result)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (confirm("Delete this match?")) deleteMatch(m.id);
+    },
+    className: "text-neutral-500 hover:text-rose-400 text-sm"
+  }, "Delete")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 flex flex-wrap gap-1.5"
+  }, m.played.map(id => {
+    const p = players.find(x => x.id === id);
+    return p ? /*#__PURE__*/React.createElement("span", {
+      key: id,
+      className: "px-2 py-0.5 rounded-full text-xs",
+      style: {
+        background: "rgba(255,107,26,0.1)",
+        color: "#ffb98a",
+        border: `1px solid ${BORDER}`
+      }
+    }, p.name) : null;
+  })))));
 }
 
 // ---------- Stats ----------
-function StatsTab({ players, matches, avail }) {
-  const stats = players.map((p) => {
-    const playedN = matches.filter((m) => m.played.includes(p.id)).length;
+function StatsTab({
+  players,
+  matches,
+  avail
+}) {
+  const stats = players.map(p => {
+    const playedN = matches.filter(m => m.played.includes(p.id)).length;
     let ins = 0;
-    Object.values(avail).forEach((day) => { if (day[p.id] === "in") ins++; });
-    return { ...p, playedN, ins };
+    Object.values(avail).forEach(day => {
+      if (day[p.id] === "in") ins++;
+    });
+    return {
+      ...p,
+      playedN,
+      ins
+    };
   }).sort((a, b) => b.playedN - a.playedN || a.name.localeCompare(b.name));
-
-  const max = Math.max(1, ...stats.map((s) => s.playedN));
+  const max = Math.max(1, ...stats.map(s => s.playedN));
   const total = matches.length;
-  const medal = (i) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <div className="kc-bebas text-3xl" style={{ letterSpacing: 2 }}>MATCHES <span style={{ color: ORANGE }}>PLAYED</span></div>
-        <div className="text-sm text-neutral-500">{total} match{total === 1 ? "" : "es"} logged</div>
-      </div>
-      <Card>
-        {stats.map((s, i) => (
-          <div key={s.id} className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: i < stats.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-            <div className="kc-bebas text-xl text-neutral-500 w-7 text-center">{medal(i) || i + 1}</div>
-            <Avatar name={s.name} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline justify-between">
-                <span className="font-medium text-neutral-200 truncate">{s.name}</span>
-                <span className="kc-bebas text-2xl tabular-nums" style={{ color: ORANGE }}>{s.playedN}</span>
-              </div>
-              <div className="h-1.5 rounded-full mt-1.5 overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
-                <div className="h-full rounded-full transition-all"
-                  style={{ width: `${(s.playedN / max) * 100}%`, background: `linear-gradient(90deg, ${ORANGE}, ${GOLD})` }} />
-              </div>
-              <div className="text-[11px] text-neutral-500 mt-1">
-                {total ? `${Math.round((s.playedN / total) * 100)}% of matches` : "—"} · said IN {s.ins} time{s.ins === 1 ? "" : "s"}
-              </div>
-            </div>
-          </div>
-        ))}
-      </Card>
-    </div>
-  );
+  const medal = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-3xl",
+    style: {
+      letterSpacing: 2
+    }
+  }, "MATCHES ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: ORANGE
+    }
+  }, "PLAYED")), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-neutral-500"
+  }, total, " match", total === 1 ? "" : "es", " logged")), /*#__PURE__*/React.createElement(Card, null, stats.map((s, i) => /*#__PURE__*/React.createElement("div", {
+    key: s.id,
+    className: "px-4 py-3 flex items-center gap-3",
+    style: {
+      borderBottom: i < stats.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-xl text-neutral-500 w-7 text-center"
+  }, medal(i) || i + 1), /*#__PURE__*/React.createElement(Avatar, {
+    name: s.name
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 min-w-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline justify-between"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-medium text-neutral-200 truncate"
+  }, s.name), /*#__PURE__*/React.createElement("span", {
+    className: "kc-bebas text-2xl tabular-nums",
+    style: {
+      color: ORANGE
+    }
+  }, s.playedN)), /*#__PURE__*/React.createElement("div", {
+    className: "h-1.5 rounded-full mt-1.5 overflow-hidden",
+    style: {
+      background: "rgba(255,255,255,0.07)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full rounded-full transition-all",
+    style: {
+      width: `${s.playedN / max * 100}%`,
+      background: `linear-gradient(90deg, ${ORANGE}, ${GOLD})`
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-neutral-500 mt-1"
+  }, total ? `${Math.round(s.playedN / total * 100)}% of matches` : "—", " · said IN ", s.ins, " time", s.ins === 1 ? "" : "s"))))));
 }
 
 // ---------- Expenses & settle-up ----------
-const EXPENSE_CATEGORIES = [
-  { key: "ground", label: "Ground", icon: "🏟️" },
-  { key: "balls", label: "Balls", icon: "🏏" },
-  { key: "water", label: "Water/Drinks", icon: "💧" },
-  { key: "food", label: "Food", icon: "🍽️" },
-  { key: "kit", label: "Kit/Gear", icon: "🎽" },
-  { key: "umpire", label: "Umpire", icon: "🧑‍⚖️" },
-  { key: "travel", label: "Travel", icon: "🚗" },
-  { key: "other", label: "Other", icon: "📦" },
-];
-const INR = (n) => "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
-
-function ExpensesTab({ players, matches, expenses, addExpense, deleteExpense, me }) {
+const EXPENSE_CATEGORIES = [{
+  key: "ground",
+  label: "Ground",
+  icon: "🏟️"
+}, {
+  key: "balls",
+  label: "Balls",
+  icon: "🏏"
+}, {
+  key: "water",
+  label: "Water/Drinks",
+  icon: "💧"
+}, {
+  key: "food",
+  label: "Food",
+  icon: "🍽️"
+}, {
+  key: "kit",
+  label: "Kit/Gear",
+  icon: "🎽"
+}, {
+  key: "umpire",
+  label: "Umpire",
+  icon: "🧑‍⚖️"
+}, {
+  key: "travel",
+  label: "Travel",
+  icon: "🚗"
+}, {
+  key: "other",
+  label: "Other",
+  icon: "📦"
+}];
+const INR = n => "₹" + Number(n || 0).toLocaleString("en-IN", {
+  maximumFractionDigits: 2
+});
+function ExpensesTab({
+  players,
+  matches,
+  expenses,
+  addExpense,
+  deleteExpense,
+  me
+}) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(toISO(new Date()));
   const [matchId, setMatchId] = useState("");
@@ -769,389 +1244,611 @@ function ExpensesTab({ players, matches, expenses, addExpense, deleteExpense, me
   const [paidBy, setPaidBy] = useState(me || "");
   const [splitAll, setSplitAll] = useState(true);
   const [splitWith, setSplitWith] = useState([]);
-
   const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name));
-  const playerName = (id) => players.find((p) => p.id === id)?.name || "—";
-
-  const toggleSplit = (id) =>
-    setSplitWith((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-
+  const playerName = id => players.find(p => p.id === id)?.name || "—";
+  const toggleSplit = id => setSplitWith(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const reset = () => {
-    setDesc(""); setAmount(""); setCategory("ground"); setMatchId("");
-    setSplitAll(true); setSplitWith([]); setOpen(false);
+    setDesc("");
+    setAmount("");
+    setCategory("ground");
+    setMatchId("");
+    setSplitAll(true);
+    setSplitWith([]);
+    setOpen(false);
   };
-
   const save = () => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0 || !paidBy) return;
-    const sharers = splitAll ? players.map((p) => p.id) : splitWith;
+    const sharers = splitAll ? players.map(p => p.id) : splitWith;
     if (!sharers.length) return;
     addExpense({
-      id: uid(), date, matchId: matchId || null, category,
-      desc: desc.trim(), amount: amt, paidBy, sharers,
+      id: uid(),
+      date,
+      matchId: matchId || null,
+      category,
+      desc: desc.trim(),
+      amount: amt,
+      paidBy,
+      sharers
     });
     reset();
   };
 
   // ----- Settle-up calculation -----
-  const { balances, totalSpend } = useMemo(() => {
+  const {
+    balances,
+    totalSpend
+  } = useMemo(() => {
     const bal = {};
-    players.forEach((p) => (bal[p.id] = 0));
+    players.forEach(p => bal[p.id] = 0);
     let total = 0;
-    expenses.forEach((e) => {
+    expenses.forEach(e => {
       total += e.amount;
-      const sharers = (e.sharers || []).filter((id) => bal[id] !== undefined);
+      const sharers = (e.sharers || []).filter(id => bal[id] !== undefined);
       if (!sharers.length) return;
       const share = e.amount / sharers.length;
-      sharers.forEach((id) => (bal[id] -= share));      // each sharer owes their share
+      sharers.forEach(id => bal[id] -= share); // each sharer owes their share
       if (bal[e.paidBy] !== undefined) bal[e.paidBy] += e.amount; // payer covered the whole bill
     });
-    return { balances: bal, totalSpend: total };
+    return {
+      balances: bal,
+      totalSpend: total
+    };
   }, [expenses, players]);
 
   // Greedy settle-up: who pays whom
   const settlements = useMemo(() => {
-    const creditors = [], debtors = [];
+    const creditors = [],
+      debtors = [];
     Object.entries(balances).forEach(([id, v]) => {
       const r = Math.round(v * 100) / 100;
-      if (r > 0.01) creditors.push({ id, amt: r });
-      else if (r < -0.01) debtors.push({ id, amt: -r });
+      if (r > 0.01) creditors.push({
+        id,
+        amt: r
+      });else if (r < -0.01) debtors.push({
+        id,
+        amt: -r
+      });
     });
     creditors.sort((a, b) => b.amt - a.amt);
     debtors.sort((a, b) => b.amt - a.amt);
     const out = [];
-    let i = 0, j = 0;
+    let i = 0,
+      j = 0;
     while (i < debtors.length && j < creditors.length) {
       const pay = Math.min(debtors[i].amt, creditors[j].amt);
-      out.push({ from: debtors[i].id, to: creditors[j].id, amt: pay });
-      debtors[i].amt -= pay; creditors[j].amt -= pay;
+      out.push({
+        from: debtors[i].id,
+        to: creditors[j].id,
+        amt: pay
+      });
+      debtors[i].amt -= pay;
+      creditors[j].amt -= pay;
       if (debtors[i].amt < 0.01) i++;
       if (creditors[j].amt < 0.01) j++;
     }
     return out;
   }, [balances]);
-
-  const matchLabel = (m) => `${fmt(m.date)}${m.opponent ? ` · vs ${m.opponent}` : ""}`;
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div className="kc-bebas text-3xl" style={{ letterSpacing: 2 }}>MATCH <span style={{ color: ORANGE }}>EXPENSES</span></div>
-        <button onClick={() => { setPaidBy(me || ""); setOpen(!open); }} className="px-4 py-2 kc-display font-semibold uppercase" style={{ ...btnOrange, letterSpacing: 1 }}>
-          {open ? "Cancel" : "+ Add expense"}
-        </button>
-      </div>
-
-      {/* Total spend banner */}
-      <Card className="p-4 flex items-center justify-between" style={{ borderColor: "rgba(255,107,26,0.4)" }}>
-        <div>
-          <div className="text-[11px] uppercase text-neutral-500" style={{ letterSpacing: 2 }}>Total team spend</div>
-          <div className="kc-bebas text-4xl" style={{ color: GOLD }}>{INR(totalSpend)}</div>
-        </div>
-        <div className="text-right text-xs text-neutral-500">
-          {expenses.length} entr{expenses.length === 1 ? "y" : "ies"}<br />
-          across {new Set(expenses.map((e) => e.matchId).filter(Boolean)).size || "—"} match(es)
-        </div>
-      </Card>
-
-      {/* Add form */}
-      {open && (
-        <Card className="p-4 space-y-3 pop" style={{ borderColor: "rgba(255,107,26,0.45)" }}>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-sm text-neutral-400">Date
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
-            </label>
-            <label className="text-sm text-neutral-400">Link to match (optional)
-              <select value={matchId} onChange={(e) => setMatchId(e.target.value)} style={inputStyle}>
-                <option value="">No specific match</option>
-                {matches.map((m) => <option key={m.id} value={m.id}>{matchLabel(m)}</option>)}
-              </select>
-            </label>
-          </div>
-
-          <div>
-            <div className="text-sm text-neutral-400 mb-1">Category</div>
-            <div className="flex flex-wrap gap-2">
-              {EXPENSE_CATEGORIES.map((c) => (
-                <button key={c.key} onClick={() => setCategory(c.key)}
-                  className="px-3 py-1.5 rounded-full text-sm transition-colors"
-                  style={category === c.key
-                    ? { ...btnOrange, borderRadius: 999 }
-                    : { border: "1px solid rgba(255,255,255,0.15)", background: "#101010", color: "#999" }}>
-                  {c.icon} {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-sm text-neutral-400">Amount (₹)
-              <input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" style={inputStyle} />
-            </label>
-            <label className="text-sm text-neutral-400">Paid by
-              <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)} style={inputStyle}>
-                <option value="">Select…</option>
-                {sortedPlayers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </label>
-          </div>
-
-          <label className="text-sm text-neutral-400 block">Description (optional)
-            <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g., 2 boxes of balls" style={inputStyle} />
-          </label>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-medium text-neutral-300">Split between</div>
-              <label className="text-sm flex items-center gap-2 cursor-pointer" style={{ color: GOLD }}>
-                <input type="checkbox" checked={splitAll} onChange={(e) => setSplitAll(e.target.checked)} />
-                Whole squad ({players.length})
-              </label>
-            </div>
-            {!splitAll && (
-              <div className="flex flex-wrap gap-2">
-                {sortedPlayers.map((p) => (
-                  <button key={p.id} onClick={() => toggleSplit(p.id)}
-                    className="px-3 py-1.5 rounded-full text-sm transition-colors flex items-center gap-1.5"
-                    style={splitWith.includes(p.id)
-                      ? { background: "rgba(74,222,128,0.18)", color: "#4ADE80", border: "1px solid rgba(74,222,128,0.5)", borderRadius: 999 }
-                      : { border: "1px solid rgba(255,255,255,0.15)", background: "#101010", color: "#999" }}>
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            {amount > 0 && (
-              <div className="text-xs text-neutral-500 mt-2">
-                {INR(parseFloat(amount) / Math.max(1, splitAll ? players.length : splitWith.length))} per person
-                {" · "}{splitAll ? players.length : splitWith.length} sharing
-              </div>
-            )}
-          </div>
-
-          <button onClick={save} disabled={!amount || parseFloat(amount) <= 0 || !paidBy || (!splitAll && !splitWith.length)}
-            className="w-full py-2.5 kc-bebas text-xl disabled:opacity-40" style={{ ...btnOrange, letterSpacing: 3 }}>
-            SAVE EXPENSE
-          </button>
-        </Card>
-      )}
-
-      {/* Settle-up */}
-      {settlements.length > 0 && (
-        <div>
-          <div className="kc-display text-base font-bold uppercase text-neutral-400 mb-2" style={{ letterSpacing: 2 }}>
-            💰 Settle up
-          </div>
-          <Card>
-            {settlements.map((s, i) => (
-              <div key={i} className="px-4 py-3 flex items-center gap-3"
-                style={{ borderBottom: i < settlements.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-                <Avatar name={playerName(s.from)} size={28} fontSize={11} />
-                <span className="text-neutral-200 font-medium">{playerName(s.from)}</span>
-                <span className="text-neutral-500">pays</span>
-                <span className="kc-bebas text-xl ml-auto mr-3" style={{ color: GOLD }}>{INR(s.amt)}</span>
-                <span className="text-neutral-500">→</span>
-                <span className="text-neutral-200 font-medium">{playerName(s.to)}</span>
-                <Avatar name={playerName(s.to)} size={28} fontSize={11} />
-              </div>
-            ))}
-          </Card>
-          <p className="text-xs text-neutral-600 mt-2">Minimum number of payments to square everyone up. Settlements update as you add or remove expenses.</p>
-        </div>
-      )}
-
-      {/* Expense list */}
-      <div>
-        <div className="kc-display text-base font-bold uppercase text-neutral-400 mb-2" style={{ letterSpacing: 2 }}>
-          All expenses ({expenses.length})
-        </div>
-        {expenses.length === 0 ? (
-          <div className="text-neutral-500 text-center py-8">No expenses logged yet. Add your first match cost above.</div>
-        ) : (
-          <div className="space-y-2">
-            {expenses.map((e) => {
-              const cat = EXPENSE_CATEGORIES.find((c) => c.key === e.category) || EXPENSE_CATEGORIES[7];
-              const m = matches.find((x) => x.id === e.matchId);
-              const perHead = e.amount / Math.max(1, (e.sharers || []).length);
-              return (
-                <Card key={e.id} className="px-4 py-3" style={{ borderLeft: `3px solid ${ORANGE}` }}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div className="text-2xl">{cat.icon}</div>
-                      <div className="min-w-0">
-                        <div className="font-medium text-neutral-100">
-                          {cat.label}{e.desc ? <span className="text-neutral-400 font-normal"> · {e.desc}</span> : ""}
-                        </div>
-                        <div className="text-xs text-neutral-500 mt-0.5">
-                          {fmt(e.date)}{m ? ` · vs ${m.opponent || "match"}` : ""} · paid by <span style={{ color: GOLD }}>{playerName(e.paidBy)}</span>
-                        </div>
-                        <div className="text-xs text-neutral-500">
-                          {INR(perHead)}/head · split {(e.sharers || []).length} way{(e.sharers || []).length === 1 ? "" : "s"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="kc-bebas text-2xl" style={{ color: ORANGE }}>{INR(e.amount)}</div>
-                      <button onClick={() => { if (confirm("Delete this expense?")) deleteExpense(e.id); }}
-                        className="text-neutral-600 hover:text-rose-400 text-xs">Delete</button>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const matchLabel = m => `${fmt(m.date)}${m.opponent ? ` · vs ${m.opponent}` : ""}`;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "space-y-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-3xl",
+    style: {
+      letterSpacing: 2
+    }
+  }, "MATCH ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: ORANGE
+    }
+  }, "EXPENSES")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setPaidBy(me || "");
+      setOpen(!open);
+    },
+    className: "px-4 py-2 kc-display font-semibold uppercase",
+    style: {
+      ...btnOrange,
+      letterSpacing: 1
+    }
+  }, open ? "Cancel" : "+ Add expense")), /*#__PURE__*/React.createElement(Card, {
+    className: "p-4 flex items-center justify-between",
+    style: {
+      borderColor: "rgba(255,107,26,0.4)"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] uppercase text-neutral-500",
+    style: {
+      letterSpacing: 2
+    }
+  }, "Total team spend"), /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-4xl",
+    style: {
+      color: GOLD
+    }
+  }, INR(totalSpend))), /*#__PURE__*/React.createElement("div", {
+    className: "text-right text-xs text-neutral-500"
+  }, expenses.length, " entr", expenses.length === 1 ? "y" : "ies", /*#__PURE__*/React.createElement("br", null), "across ", new Set(expenses.map(e => e.matchId).filter(Boolean)).size || "—", " match(es)")), open && /*#__PURE__*/React.createElement(Card, {
+    className: "p-4 space-y-3 pop",
+    style: {
+      borderColor: "rgba(255,107,26,0.45)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-3"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "Date", /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: date,
+    onChange: e => setDate(e.target.value),
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "Link to match (optional)", /*#__PURE__*/React.createElement("select", {
+    value: matchId,
+    onChange: e => setMatchId(e.target.value),
+    style: inputStyle
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "No specific match"), matches.map(m => /*#__PURE__*/React.createElement("option", {
+    key: m.id,
+    value: m.id
+  }, matchLabel(m)))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-neutral-400 mb-1"
+  }, "Category"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, EXPENSE_CATEGORIES.map(c => /*#__PURE__*/React.createElement("button", {
+    key: c.key,
+    onClick: () => setCategory(c.key),
+    className: "px-3 py-1.5 rounded-full text-sm transition-colors",
+    style: category === c.key ? {
+      ...btnOrange,
+      borderRadius: 999
+    } : {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "#101010",
+      color: "#999"
+    }
+  }, c.icon, " ", c.label)))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-3"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "Amount (₹)", /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "decimal",
+    value: amount,
+    onChange: e => setAmount(e.target.value),
+    placeholder: "0",
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "Paid by", /*#__PURE__*/React.createElement("select", {
+    value: paidBy,
+    onChange: e => setPaidBy(e.target.value),
+    style: inputStyle
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Select…"), sortedPlayers.map(p => /*#__PURE__*/React.createElement("option", {
+    key: p.id,
+    value: p.id
+  }, p.name))))), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400 block"
+  }, "Description (optional)", /*#__PURE__*/React.createElement("input", {
+    value: desc,
+    onChange: e => setDesc(e.target.value),
+    placeholder: "e.g., 2 boxes of balls",
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-medium text-neutral-300"
+  }, "Split between"), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm flex items-center gap-2 cursor-pointer",
+    style: {
+      color: GOLD
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: splitAll,
+    onChange: e => setSplitAll(e.target.checked)
+  }), "Whole squad (", players.length, ")")), !splitAll && /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, sortedPlayers.map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    onClick: () => toggleSplit(p.id),
+    className: "px-3 py-1.5 rounded-full text-sm transition-colors flex items-center gap-1.5",
+    style: splitWith.includes(p.id) ? {
+      background: "rgba(74,222,128,0.18)",
+      color: "#4ADE80",
+      border: "1px solid rgba(74,222,128,0.5)",
+      borderRadius: 999
+    } : {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "#101010",
+      color: "#999"
+    }
+  }, p.name))), amount > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-neutral-500 mt-2"
+  }, INR(parseFloat(amount) / Math.max(1, splitAll ? players.length : splitWith.length)), " per person", " · ", splitAll ? players.length : splitWith.length, " sharing")), /*#__PURE__*/React.createElement("button", {
+    onClick: save,
+    disabled: !amount || parseFloat(amount) <= 0 || !paidBy || !splitAll && !splitWith.length,
+    className: "w-full py-2.5 kc-bebas text-xl disabled:opacity-40",
+    style: {
+      ...btnOrange,
+      letterSpacing: 3
+    }
+  }, "SAVE EXPENSE")), settlements.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2",
+    style: {
+      letterSpacing: 2
+    }
+  }, "💰 Settle up"), /*#__PURE__*/React.createElement(Card, null, settlements.map((s, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "px-4 py-3 flex items-center gap-3",
+    style: {
+      borderBottom: i < settlements.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none"
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: playerName(s.from),
+    size: 28,
+    fontSize: 11
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-neutral-200 font-medium"
+  }, playerName(s.from)), /*#__PURE__*/React.createElement("span", {
+    className: "text-neutral-500"
+  }, "pays"), /*#__PURE__*/React.createElement("span", {
+    className: "kc-bebas text-xl ml-auto mr-3",
+    style: {
+      color: GOLD
+    }
+  }, INR(s.amt)), /*#__PURE__*/React.createElement("span", {
+    className: "text-neutral-500"
+  }, "→"), /*#__PURE__*/React.createElement("span", {
+    className: "text-neutral-200 font-medium"
+  }, playerName(s.to)), /*#__PURE__*/React.createElement(Avatar, {
+    name: playerName(s.to),
+    size: 28,
+    fontSize: 11
+  })))), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-neutral-600 mt-2"
+  }, "Minimum number of payments to square everyone up. Settlements update as you add or remove expenses.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2",
+    style: {
+      letterSpacing: 2
+    }
+  }, "All expenses (", expenses.length, ")"), expenses.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-neutral-500 text-center py-8"
+  }, "No expenses logged yet. Add your first match cost above.") : /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, expenses.map(e => {
+    const cat = EXPENSE_CATEGORIES.find(c => c.key === e.category) || EXPENSE_CATEGORIES[7];
+    const m = matches.find(x => x.id === e.matchId);
+    const perHead = e.amount / Math.max(1, (e.sharers || []).length);
+    return /*#__PURE__*/React.createElement(Card, {
+      key: e.id,
+      className: "px-4 py-3",
+      style: {
+        borderLeft: `3px solid ${ORANGE}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-start justify-between gap-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-start gap-3 min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-2xl"
+    }, cat.icon), /*#__PURE__*/React.createElement("div", {
+      className: "min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-medium text-neutral-100"
+    }, cat.label, e.desc ? /*#__PURE__*/React.createElement("span", {
+      className: "text-neutral-400 font-normal"
+    }, " · ", e.desc) : ""), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-neutral-500 mt-0.5"
+    }, fmt(e.date), m ? ` · vs ${m.opponent || "match"}` : "", " · paid by ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: GOLD
+      }
+    }, playerName(e.paidBy))), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-neutral-500"
+    }, INR(perHead), "/head · split ", (e.sharers || []).length, " way", (e.sharers || []).length === 1 ? "" : "s"))), /*#__PURE__*/React.createElement("div", {
+      className: "text-right shrink-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "kc-bebas text-2xl",
+      style: {
+        color: ORANGE
+      }
+    }, INR(e.amount)), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        if (confirm("Delete this expense?")) deleteExpense(e.id);
+      },
+      className: "text-neutral-600 hover:text-rose-400 text-xs"
+    }, "Delete"))));
+  }))));
 }
 
 // ---------- Leaves ----------
-function LeavesTab({ players, leaves, addLeave, deleteLeave, me }) {
+function LeavesTab({
+  players,
+  leaves,
+  addLeave,
+  deleteLeave,
+  me
+}) {
   const [playerId, setPlayerId] = useState(me || "");
   const [from, setFrom] = useState(toISO(new Date()));
   const [to, setTo] = useState(toISO(new Date()));
   const [note, setNote] = useState("");
-
   const save = () => {
     if (!playerId || !from || !to || to < from) return;
-    addLeave({ id: uid(), playerId, from, to, note: note.trim() });
+    addLeave({
+      id: uid(),
+      playerId,
+      from,
+      to,
+      note: note.trim()
+    });
     setNote("");
   };
   const today = toISO(new Date());
-  const upcoming = leaves.filter((l) => l.to >= today);
-  const past = leaves.filter((l) => l.to < today);
-
-  const LeaveRow = ({ l, dim }) => {
-    const p = players.find((x) => x.id === l.playerId);
-    return (
-      <Card className="px-4 py-3 flex items-center justify-between" style={{ borderLeft: `3px solid ${GOLD}`, opacity: dim ? 0.5 : 1 }}>
-        <div className="flex items-center gap-3">
-          {p && <Avatar name={p.name} />}
-          <div>
-            <div className="font-medium text-neutral-200">{p?.name || "Unknown"}</div>
-            <div className="text-sm text-neutral-500">
-              {fmt(l.from)}{l.from !== l.to ? ` → ${fmt(l.to)}` : ""}{l.note ? ` · ${l.note}` : ""}
-            </div>
-          </div>
-        </div>
-        <button onClick={() => { if (confirm("Delete this leave?")) deleteLeave(l.id); }}
-          className="text-neutral-500 hover:text-rose-400 text-sm">Delete</button>
-      </Card>
-    );
+  const upcoming = leaves.filter(l => l.to >= today);
+  const past = leaves.filter(l => l.to < today);
+  const LeaveRow = ({
+    l,
+    dim
+  }) => {
+    const p = players.find(x => x.id === l.playerId);
+    return /*#__PURE__*/React.createElement(Card, {
+      className: "px-4 py-3 flex items-center justify-between",
+      style: {
+        borderLeft: `3px solid ${GOLD}`,
+        opacity: dim ? 0.5 : 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3"
+    }, p && /*#__PURE__*/React.createElement(Avatar, {
+      name: p.name
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "font-medium text-neutral-200"
+    }, p?.name || "Unknown"), /*#__PURE__*/React.createElement("div", {
+      className: "text-sm text-neutral-500"
+    }, fmt(l.from), l.from !== l.to ? ` → ${fmt(l.to)}` : "", l.note ? ` · ${l.note}` : ""))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        if (confirm("Delete this leave?")) deleteLeave(l.id);
+      },
+      className: "text-neutral-500 hover:text-rose-400 text-sm"
+    }, "Delete"));
   };
-
-  return (
-    <div className="space-y-5">
-      <Card className="p-4 space-y-3" style={{ borderColor: "rgba(255,184,0,0.35)" }}>
-        <div className="kc-bebas text-3xl" style={{ letterSpacing: 2 }}>PLAN A <span style={{ color: GOLD }}>LEAVE</span></div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <label className="text-sm text-neutral-400">Player
-            <select value={playerId} onChange={(e) => setPlayerId(e.target.value)} style={inputStyle}>
-              <option value="">Select…</option>
-              {[...players].sort((a, b) => a.name.localeCompare(b.name)).map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm text-neutral-400">From
-            <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); if (to < e.target.value) setTo(e.target.value); }} style={inputStyle} />
-          </label>
-          <label className="text-sm text-neutral-400">To
-            <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} style={inputStyle} />
-          </label>
-        </div>
-        <label className="text-sm text-neutral-400 block">Note (optional)
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Travelling to hometown" style={inputStyle} />
-        </label>
-        <button onClick={save} disabled={!playerId || to < from}
-          className="px-5 py-2 kc-display font-semibold uppercase disabled:opacity-40" style={{ ...btnOrange, letterSpacing: 1 }}>
-          Add leave
-        </button>
-        <p className="text-xs text-neutral-600">Players on leave show as OUT automatically on the weekend sheet for those dates.</p>
-      </Card>
-
-      <div>
-        <div className="kc-display text-base font-bold uppercase text-neutral-400 mb-2" style={{ letterSpacing: 2 }}>Upcoming ({upcoming.length})</div>
-        {upcoming.length ? <div className="space-y-2">{upcoming.map((l) => <LeaveRow key={l.id} l={l} />)}</div>
-          : <div className="text-neutral-600 text-sm">No upcoming leaves.</div>}
-      </div>
-      {past.length > 0 && (
-        <div>
-          <div className="kc-display text-base font-bold uppercase text-neutral-500 mb-2" style={{ letterSpacing: 2 }}>Past</div>
-          <div className="space-y-2">{past.map((l) => <LeaveRow key={l.id} l={l} dim />)}</div>
-        </div>
-      )}
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    className: "space-y-5"
+  }, /*#__PURE__*/React.createElement(Card, {
+    className: "p-4 space-y-3",
+    style: {
+      borderColor: "rgba(255,184,0,0.35)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-3xl",
+    style: {
+      letterSpacing: 2
+    }
+  }, "PLAN A ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: GOLD
+    }
+  }, "LEAVE")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-3 gap-3"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "Player", /*#__PURE__*/React.createElement("select", {
+    value: playerId,
+    onChange: e => setPlayerId(e.target.value),
+    style: inputStyle
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Select…"), [...players].sort((a, b) => a.name.localeCompare(b.name)).map(p => /*#__PURE__*/React.createElement("option", {
+    key: p.id,
+    value: p.id
+  }, p.name)))), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "From", /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: from,
+    onChange: e => {
+      setFrom(e.target.value);
+      if (to < e.target.value) setTo(e.target.value);
+    },
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400"
+  }, "To", /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: to,
+    min: from,
+    onChange: e => setTo(e.target.value),
+    style: inputStyle
+  }))), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400 block"
+  }, "Note (optional)", /*#__PURE__*/React.createElement("input", {
+    value: note,
+    onChange: e => setNote(e.target.value),
+    placeholder: "Travelling to hometown",
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: save,
+    disabled: !playerId || to < from,
+    className: "px-5 py-2 kc-display font-semibold uppercase disabled:opacity-40",
+    style: {
+      ...btnOrange,
+      letterSpacing: 1
+    }
+  }, "Add leave"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-neutral-600"
+  }, "Players on leave show as OUT automatically on the weekend sheet for those dates.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2",
+    style: {
+      letterSpacing: 2
+    }
+  }, "Upcoming (", upcoming.length, ")"), upcoming.length ? /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, upcoming.map(l => /*#__PURE__*/React.createElement(LeaveRow, {
+    key: l.id,
+    l: l
+  }))) : /*#__PURE__*/React.createElement("div", {
+    className: "text-neutral-600 text-sm"
+  }, "No upcoming leaves.")), past.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-base font-bold uppercase text-neutral-500 mb-2",
+    style: {
+      letterSpacing: 2
+    }
+  }, "Past"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, past.map(l => /*#__PURE__*/React.createElement(LeaveRow, {
+    key: l.id,
+    l: l,
+    dim: true
+  })))));
 }
 
 // ---------- Squad ----------
-function SquadTab({ players, addPlayer, removePlayer, me, chooseMe, matches }) {
+function SquadTab({
+  players,
+  addPlayer,
+  removePlayer,
+  me,
+  chooseMe,
+  matches
+}) {
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const submit = () => {
     const n = name.trim();
     if (!n) return;
-    addPlayer(n, role.trim()); setName(""); setRole("");
+    addPlayer(n, role.trim());
+    setName("");
+    setRole("");
   };
-  return (
-    <div className="space-y-5">
-      <div className="kc-bebas text-3xl" style={{ letterSpacing: 2 }}>THE <span style={{ color: ORANGE }}>SQUAD</span> <span className="text-neutral-500 text-xl">({players.length})</span></div>
-
-      <div className="space-y-2">
-        {players.map((p) => {
-          const playedN = matches.filter((m) => m.played.includes(p.id)).length;
-          return (
-            <Card key={p.id} className="px-4 py-3 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-3 min-w-0">
-                <Avatar name={p.name} size={40} fontSize={15} />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="kc-display font-bold text-white" style={{ fontSize: 17, letterSpacing: 0.5 }}>{p.name}</span>
-                    {p.ovr && (
-                      <span className="kc-bebas rounded-full flex items-center justify-center"
-                        style={{ width: 24, height: 24, fontSize: 13, background: ORANGE, color: "#fff" }}>{p.ovr}</span>
-                    )}
-                    {me === p.id && <span className="text-[10px] uppercase px-2 py-0.5 rounded-full" style={{ background: "rgba(74,222,128,0.15)", color: "#4ADE80", letterSpacing: 1 }}>You</span>}
-                  </div>
-                  {p.role && (
-                    <span className="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded mt-1"
-                      style={{ background: "rgba(255,107,26,0.12)", color: ORANGE, letterSpacing: 1 }}>{p.role}</span>
-                  )}
-                  <div className="text-xs text-neutral-500 mt-0.5">
-                    {p.nick ? <span className="italic" style={{ color: GOLD }}>"{p.nick}"</span> : null}
-                    {p.nick ? " · " : ""}{playedN} match{playedN === 1 ? "" : "es"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1 text-sm shrink-0">
-                {me !== p.id && <button onClick={() => chooseMe(p.id)} style={{ color: "#4ADE80" }} className="hover:underline">This is me</button>}
-                <button onClick={() => { if (confirm(`Remove ${p.name} from the squad?`)) removePlayer(p.id); }}
-                  className="text-neutral-600 hover:text-rose-400">Remove</button>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Card className="p-4">
-        <div className="kc-display text-base font-bold uppercase text-neutral-300 mb-2" style={{ letterSpacing: 2 }}>Add a player</div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder="Player name" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
-          <input value={role} onChange={(e) => setRole(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder="Role (optional)" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
-          <button onClick={submit} className="px-5 py-2 kc-display font-semibold uppercase" style={{ ...btnOrange, letterSpacing: 1 }}>Add</button>
-        </div>
-      </Card>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    className: "space-y-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-3xl",
+    style: {
+      letterSpacing: 2
+    }
+  }, "THE ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: ORANGE
+    }
+  }, "SQUAD"), " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-neutral-500 text-xl"
+  }, "(", players.length, ")")), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, players.map(p => {
+    const playedN = matches.filter(m => m.played.includes(p.id)).length;
+    return /*#__PURE__*/React.createElement(Card, {
+      key: p.id,
+      className: "px-4 py-3 flex items-center justify-between gap-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3 min-w-0"
+    }, /*#__PURE__*/React.createElement(Avatar, {
+      name: p.name,
+      size: 40,
+      fontSize: 15
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 flex-wrap"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "kc-display font-bold text-white",
+      style: {
+        fontSize: 17,
+        letterSpacing: 0.5
+      }
+    }, p.name), p.ovr && /*#__PURE__*/React.createElement("span", {
+      className: "kc-bebas rounded-full flex items-center justify-center",
+      style: {
+        width: 24,
+        height: 24,
+        fontSize: 13,
+        background: ORANGE,
+        color: "#fff"
+      }
+    }, p.ovr), me === p.id && /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] uppercase px-2 py-0.5 rounded-full",
+      style: {
+        background: "rgba(74,222,128,0.15)",
+        color: "#4ADE80",
+        letterSpacing: 1
+      }
+    }, "You")), p.role && /*#__PURE__*/React.createElement("span", {
+      className: "inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded mt-1",
+      style: {
+        background: "rgba(255,107,26,0.12)",
+        color: ORANGE,
+        letterSpacing: 1
+      }
+    }, p.role), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-neutral-500 mt-0.5"
+    }, p.nick ? /*#__PURE__*/React.createElement("span", {
+      className: "italic",
+      style: {
+        color: GOLD
+      }
+    }, "\"", p.nick, "\"") : null, p.nick ? " · " : "", playedN, " match", playedN === 1 ? "" : "es"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-col items-end gap-1 text-sm shrink-0"
+    }, me !== p.id && /*#__PURE__*/React.createElement("button", {
+      onClick: () => chooseMe(p.id),
+      style: {
+        color: "#4ADE80"
+      },
+      className: "hover:underline"
+    }, "This is me"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        if (confirm(`Remove ${p.name} from the squad?`)) removePlayer(p.id);
+      },
+      className: "text-neutral-600 hover:text-rose-400"
+    }, "Remove")));
+  })), /*#__PURE__*/React.createElement(Card, {
+    className: "p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-base font-bold uppercase text-neutral-300 mb-2",
+    style: {
+      letterSpacing: 2
+    }
+  }, "Add a player"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col sm:flex-row gap-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: name,
+    onChange: e => setName(e.target.value),
+    onKeyDown: e => e.key === "Enter" && submit(),
+    placeholder: "Player name",
+    style: {
+      ...inputStyle,
+      marginTop: 0,
+      flex: 1
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    value: role,
+    onChange: e => setRole(e.target.value),
+    onKeyDown: e => e.key === "Enter" && submit(),
+    placeholder: "Role (optional)",
+    style: {
+      ...inputStyle,
+      marginTop: 0,
+      flex: 1
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: submit,
+    className: "px-5 py-2 kc-display font-semibold uppercase",
+    style: {
+      ...btnOrange,
+      letterSpacing: 1
+    }
+  }, "Add"))));
 }
-
-
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
+root.render(/*#__PURE__*/React.createElement(App, null));
+//]]>
 </script>
 </body>
 </html>
