@@ -18,27 +18,12 @@
 <body>
 <div id="root"></div>
 <div id="errbox"></div>
-
 <script>
-  // Visible error catcher so the page never silently shows a black screen.
-  function showErr(msg) {
-    var b = document.getElementById('errbox');
-    if (b) { b.style.display = 'block'; b.textContent = "KATL app error:\n\n" + msg + "\n\n(Screenshot this and send it.)"; }
-  }
-  window.addEventListener('error', function (e) {
-    showErr((e.error && e.error.stack) ? e.error.stack : e.message);
-  });
-  window.addEventListener('unhandledrejection', function (e) {
-    showErr('Promise error: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
-  });
-  // If React libs failed to load (CDN blocked), say so clearly.
-  window.addEventListener('load', function () {
-    if (!window.React || !window.ReactDOM) {
-      showErr('Could not load React from the CDN (unpkg.com). Check the internet connection, or the host may be blocking unpkg.');
-    }
-  });
+  function showErr(msg){var b=document.getElementById('errbox');if(b){b.style.display='block';b.textContent="KATL app error:\n\n"+msg+"\n\n(Screenshot this and send it.)";}}
+  window.addEventListener('error',function(e){showErr((e.error&&e.error.stack)?e.error.stack:e.message);});
+  window.addEventListener('unhandledrejection',function(e){showErr('Promise error: '+(e.reason&&e.reason.message?e.reason.message:e.reason));});
+  window.addEventListener('load',function(){if(!window.React||!window.ReactDOM){showErr('Could not load React from unpkg.com CDN. Check internet or host blocking.');}});
 </script>
-
 <script>
 //<![CDATA[
 const {
@@ -66,6 +51,9 @@ const ORANGE = "#FF6B1A";
 const GOLD = "#FFB800";
 const CARD = "#181818";
 const BORDER = "rgba(255,107,26,0.22)";
+
+// Change this to your own team admin passcode.
+const ADMIN_CODE = "katl2026";
 
 // ---------- The KATL squad (from Squad HQ) ----------
 const SEED_PLAYERS = [{
@@ -212,7 +200,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 // >>> PASTE YOUR SUPABASE PROJECT VALUES HERE <<<
 const SUPABASE_URL = "https://efutoaoejjnwqujkyjzf.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_cNhggrxPsGl-DssQNP8YVQ_6znHS2tg";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmdXRvYW9lampud3F1amt5anpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODE2NDYsImV4cCI6MjA5NzI1NzY0Nn08JG0huoiI4Fqq8JSjLycaXKUxFhpLXRHAmVFNekVQVo";
 // Keys that belong to the whole team (shared in Supabase).
 const SHARED_KEYS = ["katl:players", "katl:avail", "katl:matches", "katl:leaves", "katl:expenses"];
 const supaConfigured = () => SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR-PROJECT") && !SUPABASE_ANON_KEY.includes("YOUR-PUBLIC");
@@ -436,24 +424,70 @@ function App() {
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState(null);
   const [saveVerified, setSaveVerified] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    try {
+      return localStorage.getItem("katl:admin") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [adminPrompt, setAdminPrompt] = useState(false);
+
+  // When a form is open/being typed in, pause auto-refresh so it can't clobber input.
+  const editingRef = React.useRef(0);
+  const beginEditing = () => {
+    editingRef.current++;
+  };
+  const endEditing = () => {
+    editingRef.current = Math.max(0, editingRef.current - 1);
+  };
   const weekend = useMemo(() => upcomingWeekend(weekOffset), [weekOffset]);
-  async function reloadAll() {
-    setSyncing(true);
+  function unlockAdmin(code) {
+    if (code && code === ADMIN_CODE) {
+      setIsAdmin(true);
+      try {
+        localStorage.setItem("katl:admin", "1");
+      } catch {}
+      setAdminPrompt(false);
+      ping("Admin unlocked ✓");
+      return true;
+    }
+    ping("Wrong admin code");
+    return false;
+  }
+  function lockAdmin() {
+    setIsAdmin(false);
+    try {
+      localStorage.removeItem("katl:admin");
+    } catch {}
+    ping("Admin locked");
+  }
+  async function reloadAll(silent = false) {
+    // Don't auto-refresh while a form is open/being edited.
+    if (silent && editingRef.current > 0) return;
+    if (!silent) setSyncing(true);
     const ready = await storageReady();
     setStorageOk(ready);
     if (ready) {
-      let verified = false;
-      try {
-        if (supaConfigured()) {
-          verified = await storageReady();
-        } else {
-          const stamp = String(Date.now());
-          localStorage.setItem("katl-selftest", stamp);
-          verified = localStorage.getItem("katl-selftest") === stamp;
-        }
-      } catch {}
-      setSaveVerified(verified);
+      if (!silent) {
+        let verified = false;
+        try {
+          if (supaConfigured()) {
+            verified = await storageReady();
+          } else {
+            const stamp = String(Date.now());
+            localStorage.setItem("katl-selftest", stamp);
+            verified = localStorage.getItem("katl-selftest") === stamp;
+          }
+        } catch {}
+        setSaveVerified(verified);
+      }
       const [p, a, m, l, ex, meStored] = await Promise.all([loadMerged("katl:players", []), loadMerged("katl:avail", {}, "object"), loadMerged("katl:matches", []), loadMerged("katl:leaves", []), loadMerged("katl:expenses", []), loadKey("katl:me", null)]);
+      // Skip applying if user started editing mid-fetch.
+      if (silent && editingRef.current > 0) {
+        setSyncing(false);
+        return;
+      }
       const squad = mergeWithSeed(p);
       setPlayers(cur => mergeWithSeed(unionById(squad, cur)));
       setAvail(cur => unionAvail(a, cur));
@@ -461,17 +495,32 @@ function App() {
       setLeaves(cur => unionById(l, cur));
       setExpenses(cur => unionById(ex, cur));
       if (meStored) setMe(meStored);
-      saveBoth("katl:players", squad);
+      if (!silent) saveBoth("katl:players", squad);
       setLastSync(new Date().toLocaleTimeString("en-IN", {
         hour: "2-digit",
         minute: "2-digit"
       }));
     }
-    setSyncing(false);
+    if (!silent) setSyncing(false);
     setLoading(false);
   }
   useEffect(() => {
     reloadAll();
+  }, []);
+
+  // Auto-refresh: quietly re-pull shared data every 20s so teammates' updates appear live.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") reloadAll(true);
+    }, 20000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") reloadAll(true);
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, []);
   const ping = msg => {
     setToast(msg);
@@ -526,6 +575,16 @@ function App() {
     const next = unionById(fresh, matches).filter(m => m.id !== id);
     setMatches(next);
     if (!(await saveBoth("katl:matches", next))) ping("Couldn't save — please try again");
+  }
+  async function updateMatch(id, patch) {
+    const fresh = unionById(await loadMerged("katl:matches", []), matches);
+    const next = fresh.map(m => m.id === id ? {
+      ...m,
+      ...patch
+    } : m).sort((a, b) => b.date.localeCompare(a.date));
+    setMatches(next);
+    const ok = await saveBoth("katl:matches", next);
+    ping(ok ? "Match updated" : "Couldn't save — please try again");
   }
   async function addLeave(l) {
     const fresh = await loadMerged("katl:leaves", []);
@@ -622,7 +681,7 @@ function App() {
     weekend: weekend,
     onLeave: onLeave
   }), /*#__PURE__*/React.createElement("button", {
-    onClick: reloadAll,
+    onClick: () => reloadAll(false),
     title: "Refresh team data",
     disabled: syncing,
     className: "rounded-xl px-3 py-2 text-lg disabled:opacity-50",
@@ -631,9 +690,18 @@ function App() {
       background: "rgba(0,0,0,0.4)",
       color: GOLD
     }
-  }, syncing ? "…" : "⟳")))), /*#__PURE__*/React.createElement("nav", {
+  }, syncing ? "…" : "⟳"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => isAdmin ? lockAdmin() : setAdminPrompt(true),
+    title: isAdmin ? "Admin mode — tap to lock" : "Enter admin mode",
+    className: "rounded-xl px-3 py-2 text-lg",
+    style: {
+      border: `1px solid ${isAdmin ? ORANGE : BORDER}`,
+      background: isAdmin ? "rgba(255,107,26,0.18)" : "rgba(0,0,0,0.4)",
+      color: isAdmin ? ORANGE : "#888"
+    }
+  }, isAdmin ? "🔓" : "🔒")))), /*#__PURE__*/React.createElement("nav", {
     className: "max-w-3xl mx-auto px-4 flex gap-0 overflow-x-auto"
-  }, [["weekend", "This Weekend"], ["matches", "Matches"], ["expenses", "Expenses"], ["stats", "Stats"], ["leaves", "Leaves"], ["squad", "Squad"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+  }, [["weekend", "This Weekend"], ["matches", "Schedule"], ["expenses", "Expenses"], ["stats", "Stats"], ["leaves", "Leaves"], ["squad", "Squad"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     onClick: () => setTab(id),
     className: "kc-display uppercase whitespace-nowrap px-4 py-3 text-sm font-semibold transition-colors",
@@ -658,7 +726,11 @@ function App() {
     style: {
       color: GOLD
     }
-  }, supaConfigured() ? "Team sync ON" : "Local only", " ", saveVerified ? "✓" : ""), " · saves ", saveVerified === null ? "checking…" : saveVerified ? "ok" : supaConfigured() ? "BACKEND UNREACHABLE ✗" : "local ✓", " · ", players.length, " players · last sync ", lastSync || "—"), /*#__PURE__*/React.createElement("main", {
+  }, supaConfigured() ? "Team sync ON" : "Local only", " ", saveVerified ? "✓" : ""), " · saves ", saveVerified === null ? "checking…" : saveVerified ? "ok" : supaConfigured() ? "BACKEND UNREACHABLE ✗" : "local ✓", " · ", players.length, " players · ", isAdmin ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: ORANGE
+    }
+  }, "admin 🔓") : "viewer", " · last sync ", lastSync || "—"), /*#__PURE__*/React.createElement("main", {
     className: "max-w-3xl mx-auto px-4 py-6 pb-24"
   }, tab === "weekend" && /*#__PURE__*/React.createElement(WeekendTab, {
     weekend: weekend,
@@ -675,7 +747,12 @@ function App() {
     matches: matches,
     avail: avail,
     addMatch: addMatch,
-    deleteMatch: deleteMatch
+    deleteMatch: deleteMatch,
+    updateMatch: updateMatch,
+    isAdmin: isAdmin,
+    beginEditing: beginEditing,
+    endEditing: endEditing,
+    requestAdmin: () => setAdminPrompt(true)
   }), tab === "stats" && /*#__PURE__*/React.createElement(StatsTab, {
     players: players,
     matches: matches,
@@ -686,21 +763,34 @@ function App() {
     expenses: expenses,
     addExpense: addExpense,
     deleteExpense: deleteExpense,
-    me: me
+    me: me,
+    isAdmin: isAdmin,
+    beginEditing: beginEditing,
+    endEditing: endEditing,
+    requestAdmin: () => setAdminPrompt(true)
   }), tab === "leaves" && /*#__PURE__*/React.createElement(LeavesTab, {
     players: players,
     leaves: leaves,
     addLeave: addLeave,
     deleteLeave: deleteLeave,
-    me: me
+    me: me,
+    beginEditing: beginEditing,
+    endEditing: endEditing
   }), tab === "squad" && /*#__PURE__*/React.createElement(SquadTab, {
     players: players,
     addPlayer: addPlayer,
     removePlayer: removePlayer,
     me: me,
     chooseMe: chooseMe,
-    matches: matches
-  })), toast && /*#__PURE__*/React.createElement("div", {
+    matches: matches,
+    isAdmin: isAdmin,
+    beginEditing: beginEditing,
+    endEditing: endEditing,
+    requestAdmin: () => setAdminPrompt(true)
+  })), adminPrompt && /*#__PURE__*/React.createElement(AdminPrompt, {
+    onClose: () => setAdminPrompt(false),
+    onSubmit: unlockAdmin
+  }), toast && /*#__PURE__*/React.createElement("div", {
     className: "fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-sm pop",
     style: {
       background: "#181818",
@@ -709,6 +799,65 @@ function App() {
       boxShadow: "0 4px 20px rgba(255,107,26,0.3)"
     }
   }, toast));
+}
+
+// ---------- Admin passcode modal ----------
+function AdminPrompt({
+  onClose,
+  onSubmit
+}) {
+  const [code, setCode] = useState("");
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 z-50 flex items-center justify-center p-4",
+    style: {
+      background: "rgba(0,0,0,0.7)"
+    },
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement(Card, {
+    className: "p-5 w-full max-w-xs pop",
+    style: {
+      borderColor: "rgba(255,107,26,0.5)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-2xl mb-1",
+    style: {
+      letterSpacing: 1
+    }
+  }, "ADMIN ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: ORANGE
+    }
+  }, "ACCESS")), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-neutral-400 mb-3"
+  }, "Enter the team admin passcode to manage schedules, squad, and expenses."), /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    autoFocus: true,
+    value: code,
+    onChange: e => setCode(e.target.value),
+    onKeyDown: e => e.key === "Enter" && onSubmit(code),
+    placeholder: "Passcode",
+    style: inputStyle
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 mt-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    className: "flex-1 py-2 rounded-xl kc-display uppercase text-sm",
+    style: {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "#101010",
+      color: "#999",
+      letterSpacing: 1
+    }
+  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onSubmit(code),
+    className: "flex-1 py-2 kc-display uppercase text-sm font-semibold",
+    style: {
+      ...btnOrange,
+      letterSpacing: 1
+    }
+  }, "Unlock")))));
 }
 
 // ---------- Header score strip ----------
@@ -959,42 +1108,91 @@ function WeekendTab({
   }));
 }
 
-// ---------- Matches & attendance ----------
+// ---------- Schedule (upcoming fixtures + completed matches) ----------
 function MatchesTab({
   players,
   matches,
   avail,
   addMatch,
-  deleteMatch
+  deleteMatch,
+  updateMatch,
+  isAdmin,
+  beginEditing,
+  endEditing,
+  requestAdmin
 }) {
   const [open, setOpen] = useState(false);
-  const [date, setDate] = useState(toISO(new Date()));
-  const [opponent, setOpponent] = useState("");
-  const [result, setResult] = useState("");
-  const [played, setPlayed] = useState([]);
-  const prefillFromAvail = () => {
-    const day = avail[date] || {};
-    setPlayed(players.filter(p => day[p.id] === "in").map(p => p.id));
+  const [editId, setEditId] = useState(null); // schedule being created/edited
+  const [resultFor, setResultFor] = useState(null); // match being marked played
+
+  const blank = {
+    date: toISO(new Date()),
+    time: "",
+    opponent: "",
+    venue: ""
   };
-  const toggle = id => setPlayed(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  const save = () => {
-    if (!played.length) return;
-    addMatch({
-      id: uid(),
-      date,
-      opponent: opponent.trim(),
-      result: result.trim(),
-      played
+  const [form, setForm] = useState(blank);
+  const openNew = () => {
+    setForm(blank);
+    setEditId(null);
+    setOpen(true);
+    beginEditing();
+  };
+  const openEdit = m => {
+    setForm({
+      date: m.date,
+      time: m.time || "",
+      opponent: m.opponent || "",
+      venue: m.venue || ""
     });
+    setEditId(m.id);
+    setOpen(true);
+    beginEditing();
+  };
+  const closeForm = () => {
     setOpen(false);
-    setOpponent("");
-    setResult("");
-    setPlayed([]);
+    setEditId(null);
+    endEditing();
+  };
+  const saveSchedule = () => {
+    if (!form.date) return;
+    if (editId) {
+      updateMatch(editId, {
+        date: form.date,
+        time: form.time.trim(),
+        opponent: form.opponent.trim(),
+        venue: form.venue.trim()
+      });
+    } else {
+      addMatch({
+        id: uid(),
+        date: form.date,
+        time: form.time.trim(),
+        opponent: form.opponent.trim(),
+        venue: form.venue.trim(),
+        status: "scheduled",
+        result: "",
+        played: []
+      });
+    }
+    closeForm();
+  };
+  const today = toISO(new Date());
+  const sorted = [...matches].sort((a, b) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""));
+  const upcoming = sorted.filter(m => m.status !== "completed" && m.date >= today);
+  const overdue = sorted.filter(m => m.status !== "completed" && m.date < today);
+  const completed = [...matches].filter(m => m.status === "completed").sort((a, b) => b.date.localeCompare(a.date));
+  const fmtTime = t => {
+    if (!t) return "";
+    const [h, mm] = t.split(":").map(Number);
+    const ap = h >= 12 ? "PM" : "AM";
+    const h12 = (h + 11) % 12 + 1;
+    return `${h12}:${String(mm).padStart(2, "0")} ${ap}`;
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between"
+    className: "flex items-center justify-between flex-wrap gap-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "kc-bebas text-3xl",
     style: {
@@ -1004,76 +1202,181 @@ function MatchesTab({
     style: {
       color: ORANGE
     }
-  }, "LOG")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setOpen(!open),
+  }, "SCHEDULE")), isAdmin ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => open ? closeForm() : openNew(),
     className: "px-4 py-2 kc-display font-semibold uppercase",
     style: {
       ...btnOrange,
       letterSpacing: 1
     }
-  }, open ? "Cancel" : "+ Log a match")), open && /*#__PURE__*/React.createElement(Card, {
+  }, open ? "Cancel" : "+ Add fixture") : /*#__PURE__*/React.createElement("button", {
+    onClick: requestAdmin,
+    className: "px-3 py-2 kc-display text-sm uppercase rounded-xl",
+    style: {
+      border: `1px solid ${BORDER}`,
+      background: "#101010",
+      color: "#888",
+      letterSpacing: 1
+    }
+  }, "🔒 Admin to edit")), open && isAdmin && /*#__PURE__*/React.createElement(Card, {
     className: "p-4 space-y-3 pop",
     style: {
       borderColor: "rgba(255,107,26,0.45)"
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display font-bold uppercase text-neutral-300 text-sm",
+    style: {
+      letterSpacing: 2
+    }
+  }, editId ? "Edit fixture" : "New fixture"), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-3"
   }, /*#__PURE__*/React.createElement("label", {
     className: "text-sm text-neutral-400"
   }, "Date", /*#__PURE__*/React.createElement("input", {
     type: "date",
-    value: date,
-    onChange: e => setDate(e.target.value),
+    value: form.date,
+    onChange: e => setForm({
+      ...form,
+      date: e.target.value
+    }),
     style: inputStyle
   })), /*#__PURE__*/React.createElement("label", {
     className: "text-sm text-neutral-400"
-  }, "Opponent (optional)", /*#__PURE__*/React.createElement("input", {
-    value: opponent,
-    onChange: e => setOpponent(e.target.value),
-    placeholder: "e.g., Whitefield XI",
+  }, "Start time", /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    value: form.time,
+    onChange: e => setForm({
+      ...form,
+      time: e.target.value
+    }),
     style: inputStyle
   }))), /*#__PURE__*/React.createElement("label", {
     className: "text-sm text-neutral-400 block"
-  }, "Result (optional)", /*#__PURE__*/React.createElement("input", {
-    value: result,
-    onChange: e => setResult(e.target.value),
-    placeholder: "Won by 24 runs",
+  }, "Opponent", /*#__PURE__*/React.createElement("input", {
+    value: form.opponent,
+    onChange: e => setForm({
+      ...form,
+      opponent: e.target.value
+    }),
+    placeholder: "e.g., Whitefield XI",
     style: inputStyle
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between mb-2"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-sm font-medium text-neutral-300"
-  }, "Who played? (", played.length, " selected)"), /*#__PURE__*/React.createElement("button", {
-    onClick: prefillFromAvail,
-    className: "text-sm underline",
-    style: {
-      color: GOLD
-    }
-  }, "Prefill from availability")), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-wrap gap-2"
-  }, [...players].sort((a, b) => a.name.localeCompare(b.name)).map(p => /*#__PURE__*/React.createElement("button", {
-    key: p.id,
-    onClick: () => toggle(p.id),
-    className: "px-3 py-1.5 rounded-full text-sm transition-colors flex items-center gap-1.5",
-    style: played.includes(p.id) ? {
-      ...btnOrange,
-      borderRadius: 999
-    } : {
-      border: "1px solid rgba(255,255,255,0.15)",
-      background: "#101010",
-      color: "#999"
-    }
-  }, p.name)))), /*#__PURE__*/React.createElement("button", {
-    onClick: save,
-    disabled: !played.length,
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400 block"
+  }, "Venue / ground", /*#__PURE__*/React.createElement("input", {
+    value: form.venue,
+    onChange: e => setForm({
+      ...form,
+      venue: e.target.value
+    }),
+    placeholder: "e.g., HSR Ground 2",
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: saveSchedule,
+    disabled: !form.date,
     className: "w-full py-2.5 kc-bebas text-xl disabled:opacity-40",
     style: {
       ...btnOrange,
       letterSpacing: 3
     }
-  }, "SAVE MATCH")), matches.length === 0 ? /*#__PURE__*/React.createElement("div", {
-    className: "text-neutral-500 text-center py-10"
-  }, "No matches logged yet. Log your first weekend game.") : matches.map(m => /*#__PURE__*/React.createElement(Card, {
+  }, editId ? "SAVE CHANGES" : "ADD FIXTURE")), resultFor && isAdmin && /*#__PURE__*/React.createElement(ResultForm, {
+    match: resultFor,
+    players: players,
+    avail: avail,
+    onCancel: () => {
+      setResultFor(null);
+      endEditing();
+    },
+    onSave: patch => {
+      updateMatch(resultFor.id, {
+        ...patch,
+        status: "completed"
+      });
+      setResultFor(null);
+      endEditing();
+    }
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2 flex items-center gap-2",
+    style: {
+      letterSpacing: 2
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full",
+    style: {
+      background: "#4ADE80"
+    }
+  }), " Upcoming (", upcoming.length + overdue.length, ")"), upcoming.length + overdue.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-neutral-500 text-sm mb-3"
+  }, "No fixtures scheduled.", isAdmin ? " Tap + Add fixture." : "") : /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, [...upcoming, ...overdue].map(m => {
+    const day = avail[m.date] || {};
+    const inCount = players.filter(p => day[p.id] === "in").length;
+    const isOverdue = m.date < today;
+    return /*#__PURE__*/React.createElement(Card, {
+      key: m.id,
+      className: "p-4",
+      style: {
+        borderLeft: `3px solid ${isOverdue ? GOLD : "#4ADE80"}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-start justify-between gap-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "kc-display text-lg font-bold text-white",
+      style: {
+        letterSpacing: 0.5
+      }
+    }, m.opponent ? `vs ${m.opponent}` : "Match"), /*#__PURE__*/React.createElement("div", {
+      className: "text-sm text-neutral-300"
+    }, "📅 ", fmt(m.date), m.time ? ` · ⏰ ${fmtTime(m.time)}` : ""), m.venue && /*#__PURE__*/React.createElement("div", {
+      className: "text-sm text-neutral-500"
+    }, "📍 ", m.venue), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs mt-1",
+      style: {
+        color: "#4ADE80"
+      }
+    }, inCount, " available so far"), isOverdue && /*#__PURE__*/React.createElement("div", {
+      className: "text-[11px] mt-1",
+      style: {
+        color: GOLD
+      }
+    }, "⚠️ Date passed — mark as played or edit")), isAdmin && /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-col items-end gap-1 text-sm shrink-0"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setResultFor(m);
+        beginEditing();
+      },
+      style: {
+        color: "#4ADE80"
+      },
+      className: "hover:underline"
+    }, "Mark played"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => openEdit(m),
+      style: {
+        color: GOLD
+      },
+      className: "hover:underline"
+    }, "Edit"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        if (confirm("Delete this fixture?")) deleteMatch(m.id);
+      },
+      className: "text-neutral-600 hover:text-rose-400"
+    }, "Delete"))));
+  }))), completed.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2 flex items-center gap-2",
+    style: {
+      letterSpacing: 2
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 rounded-full",
+    style: {
+      background: ORANGE
+    }
+  }), " Completed (", completed.length, ")"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, completed.map(m => /*#__PURE__*/React.createElement(Card, {
     key: m.id,
     className: "p-4",
     style: {
@@ -1086,17 +1389,30 @@ function MatchesTab({
     style: {
       letterSpacing: 0.5
     }
-  }, fmt(m.date), m.opponent ? ` · vs ${m.opponent}` : ""), m.result && /*#__PURE__*/React.createElement("div", {
-    className: "text-sm font-semibold",
+  }, fmt(m.date), m.opponent ? ` · vs ${m.opponent}` : ""), m.venue && /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-neutral-500"
+  }, "📍 ", m.venue), m.result && /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-semibold mt-0.5",
     style: {
       color: "#4ADE80"
     }
-  }, m.result)), /*#__PURE__*/React.createElement("button", {
+  }, m.result)), isAdmin && /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-end gap-1 text-sm shrink-0"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setResultFor(m);
+      beginEditing();
+    },
+    style: {
+      color: GOLD
+    },
+    className: "hover:underline"
+  }, "Edit result"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       if (confirm("Delete this match?")) deleteMatch(m.id);
     },
-    className: "text-neutral-500 hover:text-rose-400 text-sm"
-  }, "Delete")), /*#__PURE__*/React.createElement("div", {
+    className: "text-neutral-600 hover:text-rose-400"
+  }, "Delete"))), (m.played || []).length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-2 flex flex-wrap gap-1.5"
   }, m.played.map(id => {
     const p = players.find(x => x.id === id);
@@ -1109,7 +1425,102 @@ function MatchesTab({
         border: `1px solid ${BORDER}`
       }
     }, p.name) : null;
-  })))));
+  })))))));
+}
+
+// ---------- Mark match as played: result + who played ----------
+function ResultForm({
+  match,
+  players,
+  avail,
+  onCancel,
+  onSave
+}) {
+  const [result, setResult] = useState(match.result || "");
+  const [played, setPlayed] = useState(match.played || []);
+  const toggle = id => setPlayed(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const prefill = () => {
+    const day = avail[match.date] || {};
+    setPlayed(players.filter(p => day[p.id] === "in").map(p => p.id));
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 z-50 flex items-center justify-center p-4",
+    style: {
+      background: "rgba(0,0,0,0.75)"
+    },
+    onClick: onCancel
+  }, /*#__PURE__*/React.createElement(Card, {
+    className: "p-4 w-full max-w-md pop",
+    style: {
+      borderColor: "rgba(255,107,26,0.5)",
+      maxHeight: "85vh",
+      overflowY: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    className: "space-y-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-2xl",
+    style: {
+      letterSpacing: 1
+    }
+  }, "RESULT · ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: ORANGE
+    }
+  }, match.opponent ? `vs ${match.opponent}` : fmt(match.date))), /*#__PURE__*/React.createElement("label", {
+    className: "text-sm text-neutral-400 block"
+  }, "Result", /*#__PURE__*/React.createElement("input", {
+    value: result,
+    onChange: e => setResult(e.target.value),
+    placeholder: "Won by 24 runs",
+    style: inputStyle
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-medium text-neutral-300"
+  }, "Who played? (", played.length, ")"), /*#__PURE__*/React.createElement("button", {
+    onClick: prefill,
+    className: "text-sm underline",
+    style: {
+      color: GOLD
+    }
+  }, "Prefill from availability")), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, [...players].sort((a, b) => a.name.localeCompare(b.name)).map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    onClick: () => toggle(p.id),
+    className: "px-3 py-1.5 rounded-full text-sm transition-colors",
+    style: played.includes(p.id) ? {
+      ...btnOrange,
+      borderRadius: 999
+    } : {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "#101010",
+      color: "#999"
+    }
+  }, p.name)))), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 pt-1"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onCancel,
+    className: "flex-1 py-2 rounded-xl kc-display uppercase text-sm",
+    style: {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "#101010",
+      color: "#999",
+      letterSpacing: 1
+    }
+  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onSave({
+      result: result.trim(),
+      played
+    }),
+    className: "flex-1 py-2 kc-display uppercase text-sm font-semibold",
+    style: {
+      ...btnOrange,
+      letterSpacing: 1
+    }
+  }, "Save result")))));
 }
 
 // ---------- Stats ----------
@@ -1119,7 +1530,7 @@ function StatsTab({
   avail
 }) {
   const stats = players.map(p => {
-    const playedN = matches.filter(m => m.played.includes(p.id)).length;
+    const playedN = matches.filter(m => (m.played || []).includes(p.id)).length;
     let ins = 0;
     Object.values(avail).forEach(day => {
       if (day[p.id] === "in") ins++;
@@ -1228,7 +1639,11 @@ function ExpensesTab({
   expenses,
   addExpense,
   deleteExpense,
-  me
+  me,
+  isAdmin,
+  beginEditing,
+  endEditing,
+  requestAdmin
 }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(toISO(new Date()));
@@ -1239,8 +1654,17 @@ function ExpensesTab({
   const [paidBy, setPaidBy] = useState(me || "");
   const [splitAll, setSplitAll] = useState(true);
   const [splitWith, setSplitWith] = useState([]);
+  const [filterMatch, setFilterMatch] = useState("all"); // "all" | "none" | matchId
+
   const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name));
   const playerName = id => players.find(p => p.id === id)?.name || "—";
+
+  // Expenses shown after applying the match filter.
+  const visibleExpenses = useMemo(() => {
+    if (filterMatch === "all") return expenses;
+    if (filterMatch === "none") return expenses.filter(e => !e.matchId);
+    return expenses.filter(e => e.matchId === filterMatch);
+  }, [expenses, filterMatch]);
   const toggleSplit = id => setSplitWith(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const reset = () => {
     setDesc("");
@@ -1250,6 +1674,7 @@ function ExpensesTab({
     setSplitAll(true);
     setSplitWith([]);
     setOpen(false);
+    endEditing();
   };
   const save = () => {
     const amt = parseFloat(amount);
@@ -1269,7 +1694,7 @@ function ExpensesTab({
     reset();
   };
 
-  // ----- Settle-up calculation -----
+  // ----- Settle-up calculation (respects the match filter) -----
   const {
     balances,
     totalSpend
@@ -1277,19 +1702,19 @@ function ExpensesTab({
     const bal = {};
     players.forEach(p => bal[p.id] = 0);
     let total = 0;
-    expenses.forEach(e => {
+    visibleExpenses.forEach(e => {
       total += e.amount;
       const sharers = (e.sharers || []).filter(id => bal[id] !== undefined);
       if (!sharers.length) return;
       const share = e.amount / sharers.length;
-      sharers.forEach(id => bal[id] -= share); // each sharer owes their share
-      if (bal[e.paidBy] !== undefined) bal[e.paidBy] += e.amount; // payer covered the whole bill
+      sharers.forEach(id => bal[id] -= share);
+      if (bal[e.paidBy] !== undefined) bal[e.paidBy] += e.amount;
     });
     return {
       balances: bal,
       totalSpend: total
     };
-  }, [expenses, players]);
+  }, [visibleExpenses, players]);
 
   // Greedy settle-up: who pays whom
   const settlements = useMemo(() => {
@@ -1325,10 +1750,15 @@ function ExpensesTab({
     return out;
   }, [balances]);
   const matchLabel = m => `${fmt(m.date)}${m.opponent ? ` · vs ${m.opponent}` : ""}`;
+  const openAdd = () => {
+    setPaidBy(me || "");
+    setOpen(!open);
+    if (!open) beginEditing();else endEditing();
+  };
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-5"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between"
+    className: "flex items-center justify-between flex-wrap gap-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "kc-bebas text-3xl",
     style: {
@@ -1338,17 +1768,48 @@ function ExpensesTab({
     style: {
       color: ORANGE
     }
-  }, "EXPENSES")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setPaidBy(me || "");
-      setOpen(!open);
-    },
+  }, "EXPENSES")), isAdmin ? /*#__PURE__*/React.createElement("button", {
+    onClick: openAdd,
     className: "px-4 py-2 kc-display font-semibold uppercase",
     style: {
       ...btnOrange,
       letterSpacing: 1
     }
-  }, open ? "Cancel" : "+ Add expense")), /*#__PURE__*/React.createElement(Card, {
+  }, open ? "Cancel" : "+ Add expense") : /*#__PURE__*/React.createElement("button", {
+    onClick: requestAdmin,
+    className: "px-3 py-2 kc-display text-sm uppercase rounded-xl",
+    style: {
+      border: `1px solid ${BORDER}`,
+      background: "#101010",
+      color: "#888",
+      letterSpacing: 1
+    }
+  }, "🔒 Admin to add")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 flex-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs uppercase text-neutral-500",
+    style: {
+      letterSpacing: 2
+    }
+  }, "Filter"), /*#__PURE__*/React.createElement("select", {
+    value: filterMatch,
+    onChange: e => setFilterMatch(e.target.value),
+    style: {
+      ...inputStyle,
+      marginTop: 0,
+      width: "auto",
+      minWidth: 200,
+      flex: 1,
+      maxWidth: 320
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All expenses"), /*#__PURE__*/React.createElement("option", {
+    value: "none"
+  }, "Not linked to a match"), [...matches].sort((a, b) => b.date.localeCompare(a.date)).map(m => /*#__PURE__*/React.createElement("option", {
+    key: m.id,
+    value: m.id
+  }, matchLabel(m))))), /*#__PURE__*/React.createElement(Card, {
     className: "p-4 flex items-center justify-between",
     style: {
       borderColor: "rgba(255,107,26,0.4)"
@@ -1358,14 +1819,14 @@ function ExpensesTab({
     style: {
       letterSpacing: 2
     }
-  }, "Total team spend"), /*#__PURE__*/React.createElement("div", {
+  }, filterMatch === "all" ? "Total team spend" : "Filtered spend"), /*#__PURE__*/React.createElement("div", {
     className: "kc-bebas text-4xl",
     style: {
       color: GOLD
     }
   }, INR(totalSpend))), /*#__PURE__*/React.createElement("div", {
     className: "text-right text-xs text-neutral-500"
-  }, expenses.length, " entr", expenses.length === 1 ? "y" : "ies", /*#__PURE__*/React.createElement("br", null), "across ", new Set(expenses.map(e => e.matchId).filter(Boolean)).size || "—", " match(es)")), open && /*#__PURE__*/React.createElement(Card, {
+  }, visibleExpenses.length, " entr", visibleExpenses.length === 1 ? "y" : "ies", /*#__PURE__*/React.createElement("br", null), filterMatch === "all" ? `across ${new Set(expenses.map(e => e.matchId).filter(Boolean)).size || "—"} match(es)` : "in this filter")), open && isAdmin && /*#__PURE__*/React.createElement(Card, {
     className: "p-4 space-y-3 pop",
     style: {
       borderColor: "rgba(255,107,26,0.45)"
@@ -1513,11 +1974,11 @@ function ExpensesTab({
     style: {
       letterSpacing: 2
     }
-  }, "All expenses (", expenses.length, ")"), expenses.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, filterMatch === "all" ? "All expenses" : "Filtered expenses", " (", visibleExpenses.length, ")"), visibleExpenses.length === 0 ? /*#__PURE__*/React.createElement("div", {
     className: "text-neutral-500 text-center py-8"
-  }, "No expenses logged yet. Add your first match cost above.") : /*#__PURE__*/React.createElement("div", {
+  }, "No expenses ", filterMatch === "all" ? "logged yet" : "in this filter", ".") : /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"
-  }, expenses.map(e => {
+  }, visibleExpenses.map(e => {
     const cat = EXPENSE_CATEGORIES.find(c => c.key === e.category) || EXPENSE_CATEGORIES[7];
     const m = matches.find(x => x.id === e.matchId);
     const perHead = e.amount / Math.max(1, (e.sharers || []).length);
@@ -1554,7 +2015,7 @@ function ExpensesTab({
       style: {
         color: ORANGE
       }
-    }, INR(e.amount)), /*#__PURE__*/React.createElement("button", {
+    }, INR(e.amount)), isAdmin && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         if (confirm("Delete this expense?")) deleteExpense(e.id);
       },
@@ -1569,7 +2030,9 @@ function LeavesTab({
   leaves,
   addLeave,
   deleteLeave,
-  me
+  me,
+  beginEditing,
+  endEditing
 }) {
   const [playerId, setPlayerId] = useState(me || "");
   const [from, setFrom] = useState(toISO(new Date()));
@@ -1712,7 +2175,11 @@ function SquadTab({
   removePlayer,
   me,
   chooseMe,
-  matches
+  matches,
+  isAdmin,
+  beginEditing,
+  endEditing,
+  requestAdmin
 }) {
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -1722,9 +2189,12 @@ function SquadTab({
     addPlayer(n, role.trim());
     setName("");
     setRole("");
+    endEditing();
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between flex-wrap gap-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "kc-bebas text-3xl",
     style: {
@@ -1736,10 +2206,19 @@ function SquadTab({
     }
   }, "SQUAD"), " ", /*#__PURE__*/React.createElement("span", {
     className: "text-neutral-500 text-xl"
-  }, "(", players.length, ")")), /*#__PURE__*/React.createElement("div", {
+  }, "(", players.length, ")")), !isAdmin && /*#__PURE__*/React.createElement("button", {
+    onClick: requestAdmin,
+    className: "px-3 py-2 kc-display text-sm uppercase rounded-xl",
+    style: {
+      border: `1px solid ${BORDER}`,
+      background: "#101010",
+      color: "#888",
+      letterSpacing: 1
+    }
+  }, "🔒 Admin to manage")), /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"
   }, players.map(p => {
-    const playedN = matches.filter(m => m.played.includes(p.id)).length;
+    const playedN = matches.filter(m => (m.played || []).includes(p.id)).length;
     return /*#__PURE__*/React.createElement(Card, {
       key: p.id,
       className: "px-4 py-3 flex items-center justify-between gap-2"
@@ -1797,13 +2276,13 @@ function SquadTab({
         color: "#4ADE80"
       },
       className: "hover:underline"
-    }, "This is me"), /*#__PURE__*/React.createElement("button", {
+    }, "This is me"), isAdmin && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         if (confirm(`Remove ${p.name} from the squad?`)) removePlayer(p.id);
       },
       className: "text-neutral-600 hover:text-rose-400"
     }, "Remove")));
-  })), /*#__PURE__*/React.createElement(Card, {
+  })), isAdmin && /*#__PURE__*/React.createElement(Card, {
     className: "p-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "kc-display text-base font-bold uppercase text-neutral-300 mb-2",
@@ -1814,6 +2293,7 @@ function SquadTab({
     className: "flex flex-col sm:flex-row gap-2"
   }, /*#__PURE__*/React.createElement("input", {
     value: name,
+    onFocus: beginEditing,
     onChange: e => setName(e.target.value),
     onKeyDown: e => e.key === "Enter" && submit(),
     placeholder: "Player name",
@@ -1824,6 +2304,7 @@ function SquadTab({
     }
   }), /*#__PURE__*/React.createElement("input", {
     value: role,
+    onFocus: beginEditing,
     onChange: e => setRole(e.target.value),
     onKeyDown: e => e.key === "Enter" && submit(),
     placeholder: "Role (optional)",
