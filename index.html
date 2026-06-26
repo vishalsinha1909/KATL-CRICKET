@@ -751,7 +751,7 @@ function App() {
     }
   }, isAdmin ? "🔓" : "🔒")))), /*#__PURE__*/React.createElement("nav", {
     className: "max-w-3xl mx-auto px-4 flex gap-0 overflow-x-auto"
-  }, [["weekend", "This Weekend"], ["matches", "Schedule"], ["expenses", "Expenses"], ["stats", "Stats"], ["leaves", "Leaves"], ["squad", "Squad"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+  }, [["weekend", "Availability"], ["matches", "Schedule"], ["expenses", "Expenses"], ["stats", "Stats"], ["leaves", "Leaves"], ["squad", "Squad"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     onClick: () => setTab(id),
     className: "kc-display uppercase whitespace-nowrap px-4 py-3 text-sm font-semibold transition-colors",
@@ -1277,6 +1277,18 @@ function MatchesTab({
     const h12 = (h + 11) % 12 + 1;
     return `${h12}:${String(mm).padStart(2, "0")} ${ap}`;
   };
+
+  // ----- Summary figures -----
+  const wld = completed.reduce((a, m) => {
+    if (m.outcome === "won") a.w++;else if (m.outcome === "lost") a.l++;else if (m.outcome === "draw") a.d++;
+    return a;
+  }, {
+    w: 0,
+    l: 0,
+    d: 0
+  });
+  const nextFixture = upcoming[0] || null;
+  const nextIn = nextFixture ? players.filter(p => (avail[nextFixture.date] || {})[p.id] === "in").length : 0;
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -1382,7 +1394,103 @@ function MatchesTab({
       setResultFor(null);
       endEditing();
     }
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(Card, {
+    className: "p-4 space-y-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-3 gap-2 text-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl py-2",
+    style: {
+      background: "rgba(255,255,255,0.04)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-3xl",
+    style: {
+      color: "#fff"
+    }
+  }, matches.length), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase text-neutral-500",
+    style: {
+      letterSpacing: 1
+    }
+  }, "Total")), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl py-2",
+    style: {
+      background: "rgba(74,222,128,0.08)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-3xl",
+    style: {
+      color: "#4ADE80"
+    }
+  }, upcoming.length + overdue.length), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase text-neutral-500",
+    style: {
+      letterSpacing: 1
+    }
+  }, "Upcoming")), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl py-2",
+    style: {
+      background: "rgba(255,107,26,0.08)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-3xl",
+    style: {
+      color: ORANGE
+    }
+  }, completed.length), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase text-neutral-500",
+    style: {
+      letterSpacing: 1
+    }
+  }, "Completed"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] uppercase text-neutral-500",
+    style: {
+      letterSpacing: 2
+    }
+  }, "Record"), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 flex gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex-1 text-center py-1 rounded-lg text-sm font-semibold",
+    style: {
+      background: "rgba(74,222,128,0.15)",
+      color: "#4ADE80"
+    }
+  }, wld.w, " W"), /*#__PURE__*/React.createElement("span", {
+    className: "flex-1 text-center py-1 rounded-lg text-sm font-semibold",
+    style: {
+      background: "rgba(244,63,94,0.15)",
+      color: "#f43f5e"
+    }
+  }, wld.l, " L"), /*#__PURE__*/React.createElement("span", {
+    className: "flex-1 text-center py-1 rounded-lg text-sm font-semibold",
+    style: {
+      background: "rgba(255,184,0,0.15)",
+      color: GOLD
+    }
+  }, wld.d, " D"))), nextFixture && /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl p-3",
+    style: {
+      background: "rgba(255,107,26,0.08)",
+      border: `1px solid ${BORDER}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase text-neutral-500 mb-0.5",
+    style: {
+      letterSpacing: 2
+    }
+  }, "Next fixture"), /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-lg font-bold text-white"
+  }, nextFixture.opponent ? `vs ${nextFixture.opponent}` : "Match"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-neutral-300"
+  }, "📅 ", fmt(nextFixture.date), nextFixture.time ? ` · ⏰ ${fmtTime(nextFixture.time)}` : "", nextFixture.venue ? ` · 📍 ${nextFixture.venue}` : ""), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs mt-0.5",
+    style: {
+      color: "#4ADE80"
+    }
+  }, nextIn, " available so far"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2 flex items-center gap-2",
     style: {
       letterSpacing: 2
@@ -1473,11 +1581,18 @@ function MatchesTab({
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-start justify-between"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "kc-display text-lg font-bold text-white",
+    className: "kc-display text-lg font-bold text-white flex items-center gap-2",
     style: {
       letterSpacing: 0.5
     }
-  }, fmt(m.date), m.opponent ? ` · vs ${m.opponent}` : ""), m.venue && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, fmt(m.date), m.opponent ? ` · vs ${m.opponent}` : ""), m.outcome && /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] uppercase px-2 py-0.5 rounded-full font-bold",
+    style: {
+      letterSpacing: 1,
+      background: m.outcome === "won" ? "rgba(74,222,128,0.18)" : m.outcome === "lost" ? "rgba(244,63,94,0.18)" : "rgba(255,184,0,0.18)",
+      color: m.outcome === "won" ? "#4ADE80" : m.outcome === "lost" ? "#f43f5e" : GOLD
+    }
+  }, m.outcome === "won" ? "Won" : m.outcome === "lost" ? "Lost" : "Draw")), m.venue && /*#__PURE__*/React.createElement("div", {
     className: "text-xs text-neutral-500"
   }, "📍 ", m.venue), m.result && /*#__PURE__*/React.createElement("div", {
     className: "text-sm font-semibold mt-0.5",
@@ -1525,12 +1640,26 @@ function ResultForm({
   onSave
 }) {
   const [result, setResult] = useState(match.result || "");
+  const [outcome, setOutcome] = useState(match.outcome || "");
   const [played, setPlayed] = useState(match.played || []);
   const toggle = id => setPlayed(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const prefill = () => {
     const day = avail[match.date] || {};
     setPlayed(players.filter(p => day[p.id] === "in").map(p => p.id));
   };
+  const OUTCOMES = [{
+    key: "won",
+    label: "Won",
+    color: "#4ADE80"
+  }, {
+    key: "lost",
+    label: "Lost",
+    color: "#f43f5e"
+  }, {
+    key: "draw",
+    label: "Draw / No result",
+    color: GOLD
+  }];
   return /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-50 flex items-center justify-center p-4",
     style: {
@@ -1556,9 +1685,26 @@ function ResultForm({
     style: {
       color: ORANGE
     }
-  }, match.opponent ? `vs ${match.opponent}` : fmt(match.date))), /*#__PURE__*/React.createElement("label", {
+  }, match.opponent ? `vs ${match.opponent}` : fmt(match.date))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-neutral-400 mb-1"
+  }, "Outcome"), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2"
+  }, OUTCOMES.map(o => /*#__PURE__*/React.createElement("button", {
+    key: o.key,
+    onClick: () => setOutcome(o.key),
+    className: "flex-1 py-2 rounded-xl kc-display uppercase text-sm font-semibold transition-all",
+    style: outcome === o.key ? {
+      background: o.color,
+      color: "#0a0a0a",
+      border: "2px solid transparent"
+    } : {
+      background: "#101010",
+      border: "1px solid rgba(255,255,255,0.14)",
+      color: "#999"
+    }
+  }, o.label)))), /*#__PURE__*/React.createElement("label", {
     className: "text-sm text-neutral-400 block"
-  }, "Result", /*#__PURE__*/React.createElement("input", {
+  }, "Result detail (optional)", /*#__PURE__*/React.createElement("input", {
     value: result,
     onChange: e => setResult(e.target.value),
     placeholder: "Won by 24 runs",
@@ -1601,6 +1747,7 @@ function ResultForm({
   }, "Cancel"), /*#__PURE__*/React.createElement("button", {
     onClick: () => onSave({
       result: result.trim(),
+      outcome,
       played
     }),
     className: "flex-1 py-2 kc-display uppercase text-sm font-semibold",
@@ -1617,8 +1764,13 @@ function StatsTab({
   matches,
   avail
 }) {
+  const todayISO = toISO(new Date());
+  // Upcoming fixtures (scheduled, not completed, today or later)
+  const upcomingFixtures = matches.filter(m => m.status !== "completed" && m.date >= todayISO);
   const stats = players.map(p => {
     const playedN = matches.filter(m => (m.played || []).includes(p.id)).length;
+    // upcoming = future fixtures this player has marked IN for
+    const upcomingN = upcomingFixtures.filter(m => (avail[m.date] || {})[p.id] === "in").length;
     let ins = 0;
     Object.values(avail).forEach(day => {
       if (day[p.id] === "in") ins++;
@@ -1626,11 +1778,12 @@ function StatsTab({
     return {
       ...p,
       playedN,
+      upcomingN,
       ins
     };
-  }).sort((a, b) => b.playedN - a.playedN || a.name.localeCompare(b.name));
+  }).sort((a, b) => b.playedN - a.playedN || b.upcomingN - a.upcomingN || a.name.localeCompare(b.name));
   const max = Math.max(1, ...stats.map(s => s.playedN));
-  const total = matches.length;
+  const total = matches.filter(m => m.status === "completed").length;
   const medal = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-4"
@@ -1641,13 +1794,13 @@ function StatsTab({
     style: {
       letterSpacing: 2
     }
-  }, "MATCHES ", /*#__PURE__*/React.createElement("span", {
+  }, "PLAYER ", /*#__PURE__*/React.createElement("span", {
     style: {
       color: ORANGE
     }
-  }, "PLAYED")), /*#__PURE__*/React.createElement("div", {
+  }, "STATS")), /*#__PURE__*/React.createElement("div", {
     className: "text-sm text-neutral-500"
-  }, total, " match", total === 1 ? "" : "es", " logged")), /*#__PURE__*/React.createElement(Card, null, stats.map((s, i) => /*#__PURE__*/React.createElement("div", {
+  }, total, " played · ", upcomingFixtures.length, " upcoming")), /*#__PURE__*/React.createElement(Card, null, stats.map((s, i) => /*#__PURE__*/React.createElement("div", {
     key: s.id,
     className: "px-4 py-3 flex items-center gap-3",
     style: {
@@ -1660,15 +1813,30 @@ function StatsTab({
   }), /*#__PURE__*/React.createElement("div", {
     className: "flex-1 min-w-0"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-baseline justify-between"
+    className: "flex items-baseline justify-between gap-2"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-medium text-neutral-200 truncate"
-  }, s.name), /*#__PURE__*/React.createElement("span", {
+  }, s.name), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline gap-3 shrink-0"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-right"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "kc-bebas text-2xl tabular-nums",
     style: {
       color: ORANGE
     }
-  }, s.playedN)), /*#__PURE__*/React.createElement("div", {
+  }, s.playedN), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] uppercase text-neutral-500 ml-1"
+  }, "played")), /*#__PURE__*/React.createElement("span", {
+    className: "text-right"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "kc-bebas text-2xl tabular-nums",
+    style: {
+      color: "#4ADE80"
+    }
+  }, s.upcomingN), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] uppercase text-neutral-500 ml-1"
+  }, "upcoming")))), /*#__PURE__*/React.createElement("div", {
     className: "h-1.5 rounded-full mt-1.5 overflow-hidden",
     style: {
       background: "rgba(255,255,255,0.07)"
@@ -1681,7 +1849,7 @@ function StatsTab({
     }
   })), /*#__PURE__*/React.createElement("div", {
     className: "text-[11px] text-neutral-500 mt-1"
-  }, total ? `${Math.round(s.playedN / total * 100)}% of matches` : "—", " · said IN ", s.ins, " time", s.ins === 1 ? "" : "s"))))));
+  }, total ? `${Math.round(s.playedN / total * 100)}% of completed` : "—", " · IN for ", s.upcomingN, " of ", upcomingFixtures.length, " upcoming"))))));
 }
 
 // ---------- Expenses & settle-up ----------
@@ -2296,6 +2464,127 @@ function ExpensesTab({
   }))));
 }
 
+// ---------- Leave month calendar ----------
+function LeaveCalendar({
+  leaves,
+  players,
+  onLeave
+}) {
+  const [cursor, setCursor] = useState(() => {
+    const d = new Date();
+    return {
+      y: d.getFullYear(),
+      m: d.getMonth()
+    };
+  });
+  const playerName = id => players.find(p => p.id === id)?.name || "?";
+  const monthName = new Date(cursor.y, cursor.m, 1).toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric"
+  });
+  const firstDow = (new Date(cursor.y, cursor.m, 1).getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(cursor.y, cursor.m + 1, 0).getDate();
+  const todayISO = toISO(new Date());
+
+  // Map ISO date -> array of player names on leave that day
+  const leavesByDate = iso => leaves.filter(l => l.from <= iso && iso <= l.to).map(l => playerName(l.playerId));
+  const cells = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${cursor.y}-${String(cursor.m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    cells.push({
+      d,
+      iso,
+      names: leavesByDate(iso)
+    });
+  }
+  const move = delta => setCursor(c => {
+    let m = c.m + delta,
+      y = c.y;
+    if (m < 0) {
+      m = 11;
+      y--;
+    }
+    if (m > 11) {
+      m = 0;
+      y++;
+    }
+    return {
+      y,
+      m
+    };
+  });
+  return /*#__PURE__*/React.createElement(Card, {
+    className: "p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => move(-1),
+    className: "px-3 py-1 rounded-lg",
+    style: {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "#101010",
+      color: "#ddd"
+    }
+  }, "←"), /*#__PURE__*/React.createElement("div", {
+    className: "kc-bebas text-xl",
+    style: {
+      letterSpacing: 1
+    }
+  }, monthName), /*#__PURE__*/React.createElement("button", {
+    onClick: () => move(1),
+    className: "px-3 py-1 rounded-lg",
+    style: {
+      border: "1px solid rgba(255,255,255,0.15)",
+      background: "#101010",
+      color: "#ddd"
+    }
+  }, "→")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-7 gap-1 text-center mb-1"
+  }, ["M", "T", "W", "T", "F", "S", "S"].map((d, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "text-[10px] uppercase text-neutral-600",
+    style: {
+      letterSpacing: 1
+    }
+  }, d))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-7 gap-1"
+  }, cells.map((c, i) => {
+    if (!c) return /*#__PURE__*/React.createElement("div", {
+      key: i
+    });
+    const has = c.names.length > 0;
+    const isToday = c.iso === todayISO;
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "rounded-lg p-1 min-h-[42px] flex flex-col items-center",
+      style: {
+        background: has ? "rgba(255,184,0,0.13)" : "rgba(255,255,255,0.03)",
+        border: isToday ? `1px solid ${ORANGE}` : "1px solid transparent"
+      },
+      title: has ? c.names.join(", ") : ""
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs",
+      style: {
+        color: has ? GOLD : "#888"
+      }
+    }, c.d), has && /*#__PURE__*/React.createElement("span", {
+      className: "mt-0.5 text-[9px] font-bold leading-none px-1 rounded-full",
+      style: {
+        background: GOLD,
+        color: "#0a0a0a"
+      }
+    }, c.names.length));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mt-3 text-[11px] text-neutral-500"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inline-block w-3 h-3 rounded",
+    style: {
+      background: "rgba(255,184,0,0.4)"
+    }
+  }), "Days with leaves (number = how many players). Tap-hold a day to see names."));
+}
+
 // ---------- Leaves ----------
 function LeavesTab({
   players,
@@ -2320,6 +2609,7 @@ function LeavesTab({
       note: note.trim()
     });
     setNote("");
+    endEditing && endEditing();
   };
   const today = toISO(new Date());
   const upcoming = leaves.filter(l => l.to >= today);
@@ -2415,6 +2705,14 @@ function LeavesTab({
   }, "Add leave"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-neutral-600"
   }, "Players on leave show as OUT automatically on the weekend sheet for those dates.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2",
+    style: {
+      letterSpacing: 2
+    }
+  }, "📅 Leave calendar"), /*#__PURE__*/React.createElement(LeaveCalendar, {
+    leaves: leaves,
+    players: players
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "kc-display text-base font-bold uppercase text-neutral-400 mb-2",
     style: {
       letterSpacing: 2
