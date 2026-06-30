@@ -14,6 +14,11 @@
   input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
   #errbox { display:none; padding:20px; white-space:pre-wrap; font-family:monospace; font-size:13px; color:#ffb98a; }
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="KATL">
+<link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 <div id="root"></div>
@@ -714,7 +719,7 @@ function App() {
       color: GOLD,
       letterSpacing: "0.3em"
     }
-  }, "KATL Cricket Club"), /*#__PURE__*/React.createElement("h1", {
+  }, "Weekend Cricket Club"), /*#__PURE__*/React.createElement("h1", {
     className: "kc-bebas leading-none",
     style: {
       fontSize: 52,
@@ -2894,6 +2899,147 @@ function SquadTab({
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/*#__PURE__*/React.createElement(App, null));
+//]]>
+</script>
+<script>
+//<![CDATA[
+/* ================= KATL Push Notifications (standalone add-on) ================= */
+(function () {
+  var SUPABASE_URL = "https://efutoaoejjnwqujkyjzf.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_cNhggrxPsGl-DssQNP8YVQ_6znHS2tg";
+  var VAPID_PUBLIC = "BD-prSWVnb6PwrCIvkMkuemuGYlE5dMzMDPg3wOzVNdiBVXmsVa6W71enh9eWvQ4wfylhEsK5ZZJGl53WD0WiQE";
+  var SEND_FN_URL = SUPABASE_URL + "/functions/v1/send-push";
+
+  function urlB64ToUint8Array(base64) {
+    var pad = "=".repeat((4 - (base64.length % 4)) % 4);
+    var b64 = (base64 + pad).replace(/-/g, "+").replace(/_/g, "/");
+    var raw = atob(b64);
+    var arr = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+  }
+  function headers() {
+    return { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" };
+  }
+  function isAdmin() { try { return localStorage.getItem("katl:admin") === "1"; } catch (e) { return false; } }
+  function toast(msg) {
+    var t = document.createElement("div");
+    t.textContent = msg;
+    t.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#181818;border:1px solid #FF6B1A;color:#fff;padding:10px 16px;border-radius:99px;font-family:sans-serif;font-size:13px;z-index:99999;box-shadow:0 4px 20px rgba(255,107,26,.3)";
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+
+  async function getReg() {
+    if (!("serviceWorker" in navigator)) return null;
+    return await navigator.serviceWorker.ready;
+  }
+
+  async function subscribe() {
+    try {
+      if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+        toast("This browser doesn't support push. On iPhone, add to Home Screen first.");
+        return;
+      }
+      var perm = await Notification.requestPermission();
+      if (perm !== "granted") { toast("Notifications blocked."); return; }
+      var reg = await getReg();
+      var sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC),
+        });
+      }
+      var player = "";
+      try { player = localStorage.getItem("katl:me") || ""; } catch (e) {}
+      // Upsert by endpoint
+      await fetch(SUPABASE_URL + "/rest/v1/push_subs?on_conflict=endpoint", {
+        method: "POST",
+        headers: Object.assign(headers(), { "Prefer": "resolution=merge-duplicates,return=minimal" }),
+        body: JSON.stringify({ endpoint: sub.endpoint, sub: sub, player: player }),
+      });
+      localStorage.setItem("katl:pushOn", "1");
+      render();
+      toast("🔔 Notifications enabled!");
+    } catch (e) {
+      toast("Couldn't enable: " + (e.message || e));
+    }
+  }
+
+  async function unsubscribe() {
+    try {
+      var reg = await getReg();
+      var sub = reg && (await reg.pushManager.getSubscription());
+      if (sub) {
+        await fetch(SUPABASE_URL + "/rest/v1/push_subs?endpoint=eq." + encodeURIComponent(sub.endpoint), {
+          method: "DELETE", headers: headers(),
+        });
+        await sub.unsubscribe();
+      }
+      localStorage.removeItem("katl:pushOn");
+      render();
+      toast("Notifications turned off.");
+    } catch (e) { toast("Error: " + (e.message || e)); }
+  }
+
+  async function sendBroadcast() {
+    var secret = prompt("Admin send code:");
+    if (!secret) return;
+    var title = prompt("Notification title:", "KATL Cricket 🏏");
+    if (title === null) return;
+    var body = prompt("Message:", "Mark your availability for this weekend!");
+    if (body === null) return;
+    try {
+      var r = await fetch(SEND_FN_URL, {
+        method: "POST",
+        headers: Object.assign(headers(), {}),
+        body: JSON.stringify({ title: title, body: body, url: ".", adminSecret: secret }),
+      });
+      var j = await r.json();
+      if (r.ok) toast("Sent to " + (j.sent || 0) + " device(s).");
+      else toast("Failed: " + (j.error || r.status));
+    } catch (e) { toast("Send error: " + (e.message || e)); }
+  }
+
+  function render() {
+    var wrap = document.getElementById("katl-push-wrap");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "katl-push-wrap";
+      wrap.style.cssText = "position:fixed;bottom:16px;right:16px;z-index:99998;display:flex;flex-direction:column;gap:8px;align-items:flex-end;font-family:sans-serif";
+      document.body.appendChild(wrap);
+    }
+    wrap.innerHTML = "";
+    var on = false;
+    try { on = localStorage.getItem("katl:pushOn") === "1"; } catch (e) {}
+
+    var btn = document.createElement("button");
+    btn.textContent = on ? "🔔 On" : "🔔 Notify me";
+    btn.style.cssText = "background:" + (on ? "rgba(74,222,128,.18)" : "linear-gradient(90deg,#FF6B1A,#ff8c42)") + ";color:" + (on ? "#4ADE80" : "#fff") + ";border:1px solid " + (on ? "rgba(74,222,128,.5)" : "transparent") + ";padding:10px 16px;border-radius:99px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer";
+    btn.onclick = on ? unsubscribe : subscribe;
+    wrap.appendChild(btn);
+
+    if (isAdmin()) {
+      var sb = document.createElement("button");
+      sb.textContent = "📢 Send to team";
+      sb.style.cssText = "background:#181818;color:#FFB800;border:1px solid rgba(255,107,26,.4);padding:8px 14px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer";
+      sb.onclick = sendBroadcast;
+      wrap.appendChild(sb);
+    }
+  }
+
+  // Register SW + initial render
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(render, 800); });
+  } else { setTimeout(render, 800); }
+  // Re-render when admin state may change
+  setInterval(render, 4000);
+})();
+
 //]]>
 </script>
 </body>
