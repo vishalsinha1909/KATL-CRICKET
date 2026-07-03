@@ -31,6 +31,7 @@
 </script>
 <script>
 //<![CDATA[
+
 const {
   useState,
   useEffect,
@@ -719,7 +720,7 @@ function App() {
       color: GOLD,
       letterSpacing: "0.3em"
     }
-  }, "KATL Cricket Club"), /*#__PURE__*/React.createElement("h1", {
+  }, "KEYA Cricket Club"), /*#__PURE__*/React.createElement("h1", {
     className: "kc-bebas leading-none",
     style: {
       fontSize: 52,
@@ -2064,23 +2065,14 @@ function ExpensesTab({
     style: {
       color: ORANGE
     }
-  }, "EXPENSES")), isAdmin ? /*#__PURE__*/React.createElement("button", {
+  }, "EXPENSES")), /*#__PURE__*/React.createElement("button", {
     onClick: openAdd,
     className: "px-4 py-2 kc-display font-semibold uppercase",
     style: {
       ...btnOrange,
       letterSpacing: 1
     }
-  }, open ? "Cancel" : "+ Add expense") : /*#__PURE__*/React.createElement("button", {
-    onClick: requestAdmin,
-    className: "px-3 py-2 kc-display text-sm uppercase rounded-xl",
-    style: {
-      border: `1px solid ${BORDER}`,
-      background: "#101010",
-      color: "#888",
-      letterSpacing: 1
-    }
-  }, "🔒 Admin to add")), /*#__PURE__*/React.createElement("div", {
+  }, open ? "Cancel" : "+ Add expense")), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 flex-wrap"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs uppercase text-neutral-500",
@@ -2122,7 +2114,7 @@ function ExpensesTab({
     }
   }, INR(totalSpend))), /*#__PURE__*/React.createElement("div", {
     className: "text-right text-xs text-neutral-500"
-  }, visibleExpenses.length, " entr", visibleExpenses.length === 1 ? "y" : "ies", /*#__PURE__*/React.createElement("br", null), filterMatch === "all" ? `across ${new Set(expenses.map(e => e.matchId).filter(Boolean)).size || "—"} match(es)` : "in this filter")), open && isAdmin && /*#__PURE__*/React.createElement(Card, {
+  }, visibleExpenses.length, " entr", visibleExpenses.length === 1 ? "y" : "ies", /*#__PURE__*/React.createElement("br", null), filterMatch === "all" ? `across ${new Set(expenses.map(e => e.matchId).filter(Boolean)).size || "—"} match(es)` : "in this filter")), open && /*#__PURE__*/React.createElement(Card, {
     className: "p-4 space-y-3 pop",
     style: {
       borderColor: "rgba(255,107,26,0.45)"
@@ -2899,6 +2891,7 @@ function SquadTab({
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/*#__PURE__*/React.createElement(App, null));
+
 //]]>
 </script>
 <script>
