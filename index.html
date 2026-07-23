@@ -36,6 +36,7 @@
 
 
 
+
 const {
   useState,
   useEffect,
@@ -231,6 +232,19 @@ function weekDays(offsetWeeks = 0) {
   return out;
 }
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+const fmtWhen = ts => {
+  if (!ts) return "";
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + "m ago";
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + "h ago";
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + "d ago";
+  return new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+};
+const fmtWhenFull = ts => ts ? new Date(ts).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
 
 // ---------- storage helpers (Supabase shared backend + localStorage cache) ----------
 const sleep = ms => new Promise(res => setTimeout(res, ms));
@@ -595,7 +609,7 @@ function App() {
     const day = {
       ...(base[dateISO] || {})
     };
-    if (day[playerId] === status) delete day[playerId];else day[playerId] = status;
+    if (day[playerId] === status) { delete day[playerId]; delete day["_t_" + playerId]; } else { day[playerId] = status; day["_t_" + playerId] = Date.now(); }
     const next = {
       ...base,
       [dateISO]: day
@@ -1197,8 +1211,13 @@ function WeekendTab({
       size: 24,
       fontSize: 10
     }), /*#__PURE__*/React.createElement("span", {
+      className: "flex flex-col min-w-0"
+    }, /*#__PURE__*/React.createElement("span", {
       className: "font-medium truncate text-neutral-200"
-    }, p.name), p.leave && /*#__PURE__*/React.createElement("span", {
+    }, p.name), dayAvail["_t_" + p.id] ? /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-neutral-500 truncate",
+      title: "Marked " + fmtWhenFull(dayAvail["_t_" + p.id])
+    }, fmtWhen(dayAvail["_t_" + p.id])) : null), p.leave && /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] uppercase text-rose-400 ml-auto",
       style: {
         letterSpacing: 1
@@ -2904,6 +2923,7 @@ function SquadTab({
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/*#__PURE__*/React.createElement(App, null));
+
 
 
 
