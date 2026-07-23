@@ -35,6 +35,7 @@
 
 
 
+
 const {
   useState,
   useEffect,
@@ -1050,15 +1051,14 @@ function WeekendTab({
     const d = avail[iso] || {};
     return players.filter(p => onLeave(p.id, iso) ? false : d[p.id] === "in").length;
   };
-  const weekLabel = weekOffset === 0 ? "THIS WEEK" : weekOffset === 1 ? "NEXT WEEK" : `IN ${weekOffset} WEEKS`;
+  const weekLabel = weekOffset === 0 ? "THIS WEEK" : weekOffset === 1 ? "NEXT WEEK" : weekOffset === -1 ? "LAST WEEK" : weekOffset > 1 ? `IN ${weekOffset} WEEKS` : `${Math.abs(weekOffset)} WEEKS AGO`;
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-5"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between"
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setWeekOffset(Math.max(0, weekOffset - 1)),
-    disabled: weekOffset === 0,
-    className: "px-3 py-1.5 disabled:opacity-40",
+    onClick: () => setWeekOffset(weekOffset - 1),
+    className: "px-3 py-1.5",
     style: navBtn
   }, "←"), /*#__PURE__*/React.createElement("div", {
     className: "kc-bebas text-2xl",
@@ -2904,6 +2904,7 @@ function SquadTab({
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/*#__PURE__*/React.createElement(App, null));
+
 
 
 
