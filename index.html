@@ -37,6 +37,7 @@
 
 
 
+
 const {
   useState,
   useEffect,
@@ -1088,7 +1089,8 @@ function WeekendTab({
   }, week.map(iso => {
     const {
       dow,
-      dom
+      dom,
+      mon
     } = fmtShort(iso);
     const sel = iso === dateISO;
     const isToday = iso === todayISO;
@@ -1113,7 +1115,7 @@ function WeekendTab({
       }
     }, dow), /*#__PURE__*/React.createElement("span", {
       className: "kc-bebas text-xl leading-none mt-0.5"
-    }, dom), /*#__PURE__*/React.createElement("span", {
+    }, dom, " ", mon), /*#__PURE__*/React.createElement("span", {
       className: "mt-1 text-[10px] tabular-nums",
       style: {
         color: sel ? "#fff" : cnt ? "#4ADE80" : "#555"
@@ -2923,6 +2925,7 @@ function SquadTab({
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/*#__PURE__*/React.createElement(App, null));
+
 
 
 
